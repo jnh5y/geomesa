@@ -32,6 +32,7 @@ import org.joda.time.{Duration, Interval, DateTime}
 import org.junit.runner.RunWith
 import org.opengis.feature.simple.SimpleFeature
 import org.specs2.runner.JUnitRunner
+import scala.collection.GenSeq
 
 @RunWith(classOf[JUnitRunner])
 class IndexIteratorTest extends SpatioTemporalIntersectingIteratorTest {
@@ -53,13 +54,13 @@ class IndexIteratorTest extends SpatioTemporalIntersectingIteratorTest {
       entry
     }
 
-    def convertToSimpleFeatures(entries: List[TestData.Entry] = TestData.fullData): List[SimpleFeature] = {
+    def convertToSimpleFeatures(entries: GenSeq[TestData.Entry] = TestData.fullData): GenSeq[SimpleFeature] = {
       entries.map { entry =>
         createSimpleFeature(entry.id, entry.wkt, entry.dt)
       }
     }
 
-    def setupMockFeatureSource(entries: List[TestData.Entry]): SimpleFeatureStore = {
+    def setupMockFeatureSource(entries: GenSeq[TestData.Entry]): SimpleFeatureStore = {
       val TEST_TABLE = "test_table"
 
       val mockInstance = new MockInstance("dummy")
@@ -86,7 +87,7 @@ class IndexIteratorTest extends SpatioTemporalIntersectingIteratorTest {
       ds.createSchema(TestData.featureType)
       val fs = ds.getFeatureSource(TestData.featureName).asInstanceOf[SimpleFeatureStore]
       val dataFeatures = convertToSimpleFeatures(entries)
-      val featureCollection = DataUtilities.collection(dataFeatures)
+      val featureCollection = DataUtilities.collection(dataFeatures.toArray)
       fs.addFeatures(featureCollection)
       fs.getTransaction.commit()
       fs
@@ -94,7 +95,7 @@ class IndexIteratorTest extends SpatioTemporalIntersectingIteratorTest {
   }
 
   override def runMockAccumuloTest(label: String,
-                                   entries: List[TestData.Entry] = TestData.fullData,
+                                   entries: GenSeq[TestData.Entry] = TestData.fullData,
                                    ecqlFilter: Option[String] = None,
                                    dtFilter: Interval = null,
                                    overrideGeometry: Boolean = false,

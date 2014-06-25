@@ -1,5 +1,6 @@
 package geomesa.core.data
 
+import com.typesafe.scalalogging.slf4j.Logging
 import geomesa.core.iterators.{TestData, SpatioTemporalIntersectingIteratorTest}
 import geomesa.core.iterators.TestData._
 import org.geotools.filter.text.ecql.ECQL
@@ -11,19 +12,28 @@ import org.joda.time._
 import geomesa.core.index.IndexSchema
 import org.opengis.feature.simple.SimpleFeature
 import org.apache.accumulo.core.client.Connector
+import scala.collection.GenSeq
+import scala.collection.parallel.ParSeq
 
 @RunWith(classOf[JUnitRunner])
-class FilterTest extends Specification {
+class FilterTest extends Specification with Logging {
 
   val stiit = new SpatioTemporalIntersectingIteratorTest
 
-  val fullDataFeatures = fullData.map(createSF)
+  logger.debug("Setting up fullData")
+
+  val fullDataFeatures = fullData.par.map(createSF)
   val fullDataConnector = TestData.setupMockAccumuloTable(fullData, "fullData")
 
+  logger.debug("Done setting up fullData.\nSetting up hugeData.")
+
   val hugeDataFeatures = hugeData.map(createSF)
+  logger.debug("Calling out to setup table.")
   val hugeDataConnector = TestData.setupMockAccumuloTable(hugeData, "hugeData")
 
-  val predicates = List("INTERSECTS", "DISJOINT", "CROSSES", "CONTAINS", "OVERLAPS", "WITHIN")
+  logger.debug("Done setting up hugeData.")
+
+  val predicates = List("INTERSECTS", "OVERLAPS", "WITHIN")
 
   // Predicates which are downright silly
   val silly = List("TOUCHES", "EQUALS")
@@ -37,8 +47,13 @@ class FilterTest extends Specification {
 
   val tails = List("(geomesa_index_geometry, POLYGON ((45 23, 48 23, 48 27, 45 27, 45 23)))")
 
+  val thb9u2s = "POLYGON ((45.8953857421875 27.02911376953125, 45.8953857421875 27.030487060546875, " +
+    "45.896759033203125 27.030487060546875, 45.896759033203125 27.02911376953125, 45.8953857421875 27.02911376953125))"
+
 //  val tails = List("(geomesa_index_geometry, POLYGON ((45 23, 48 23, 48 27, 45 27, 45 23)))",
 //                   "(geomesa_index_geometry, POLYGON ((45 23, 48 23, 48 27, 45 27, 45 23))) AND (attr2 like '2nd___')")
+
+  val disjoint = s"DISJOINT (geomesa_index_geometry, $thb9u2s)"
 
   val dtFilter: Interval = IndexSchema.everywhen
   val int2 = new Interval(new DateTime("2010-07-01T00:00:00.000Z"), new DateTime("2010-07-31T00:00:00.000Z"))
@@ -75,7 +90,7 @@ class FilterTest extends Specification {
     g2 <- geoms if g2 != g1
   } yield s"$p1$g1 OR $p2$g2"
 
-  val filters: List[String] = basicFilters ++ moreGeomFilters ++ oneAndGeoms :+ "INCLUDE"  //++ oneOrGeoms
+  val filters: List[String] = disjoint :: "INCLUDE" :: basicFilters ++ moreGeomFilters // ++ oneAndGeoms :+ "INCLUDE"  //++ oneOrGeoms
   //val filters = oneOrGeoms
   // RELATE, DWITHIN, BEYOND, BBOX
 
@@ -95,7 +110,7 @@ class FilterTest extends Specification {
     }
   }
 
-  def compare(fs: String, features: List[SimpleFeature], target: String, conn: Connector) = {
+  def compare(fs: String, features: GenSeq[SimpleFeature], target: String, conn: Connector) = {
     val bs = () => conn.createBatchScanner(target, TEST_AUTHORIZATIONS, 5)
     val filter = ECQL.toFilter(fs)
 
@@ -104,8 +119,8 @@ class FilterTest extends Specification {
     val filteredNumber: Int = features.count(filter.evaluate)
     val mockNumber: Int = stiit.runQuery(q, bs, false)
 
-    if(filteredNumber != mockNumber)
-      println(s"Filter against $target: $fs filtered: $filteredNumber mockNumber: $mockNumber")
+    //if(filteredNumber != mockNumber)
+      logger.debug(s"Filter against $target: $fs filtered: $filteredNumber mockNumber: $mockNumber")
 
     filteredNumber mustEqual mockNumber
   }

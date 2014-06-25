@@ -187,6 +187,7 @@ class FilterToAccumulo(sft: SimpleFeatureType) {
           ff.not(ff.intersects(ff.property(geomFieldName), ff.literal(oldSpace)))
       }
     } else Filter.INCLUDE
+
     val notTemporal = if (temporalPredicate != noInterval) {
       val oldTemporal = temporalPredicate
       temporalPredicate = noInterval
@@ -201,6 +202,7 @@ class FilterToAccumulo(sft: SimpleFeatureType) {
             ff.literal(dts2lit(s, e))))
       }
     } else Filter.INCLUDE
+
     // these three components are joined by an implied AND; build (and simplify) that expression
     Seq[Filter](notSpatial, notTemporal, notAttributes).foldLeft(Filter.INCLUDE.asInstanceOf[Filter])((filterSoFar, subFilter) =>
       (filterSoFar, subFilter) match {

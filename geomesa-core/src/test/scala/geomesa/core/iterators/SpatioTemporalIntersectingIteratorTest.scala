@@ -18,6 +18,7 @@ package geomesa.core.iterators
 
 import collection.JavaConversions._
 import collection.JavaConverters._
+import com.typesafe.scalalogging.slf4j.Logging
 import com.vividsolutions.jts.geom.{Polygon, Geometry, GeometryFactory}
 import geomesa.core.data.SimpleFeatureEncoderFactory
 import geomesa.core.index._
@@ -37,13 +38,15 @@ import org.junit.runner.RunWith
 import org.opengis.feature.simple.{SimpleFeature, SimpleFeatureType}
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
+import scala.collection.GenSeq
+import scala.collection.parallel.ParSeq
 import scala.util.{Try, Random}
 
 object UnitTestEntryType  {
   def getTypeSpec = "POINT:String," + "LINESTRING:String," + "POLYGON:String," + "attr2:String," + spec
 }
 
-object TestData {
+object TestData extends Logging {
   val TEST_USER = "root"
   val TEST_TABLE = "test_table"
   val TEST_AUTHORIZATIONS = Constants.NO_AUTHS
@@ -137,7 +140,7 @@ object TestData {
 
   val fullData = points ::: lines ::: polygons
 
-  val hugeData: List[Entry] = {
+  val hugeData: Seq[Entry] = {
     val rng = new Random(0)
     val minTime = new DateTime(2010, 6, 1, 0, 0, 0, DateTimeZone.forID("UTC")).getMillis
     val maxTime = new DateTime(2010, 8, 31, 23, 59, 59, DateTimeZone.forID("UTC")).getMillis
@@ -171,7 +174,7 @@ object TestData {
     }
 
 
-    pts ++ linesPolys.toList
+    pts ++ linesPolys
   }
 
   val pointWithNoID = List(Entry("POINT(-78.0 38.0)", null))
@@ -207,19 +210,38 @@ object TestData {
   }
 
 
-  def setupMockAccumuloTable(entries: List[Entry], tableName: String = TEST_TABLE): Connector = {
+  def setupMockAccumuloTable(entries: GenSeq[Entry], tableName: String = TEST_TABLE): Connector = {
     val mockInstance = new MockInstance()
     val c = mockInstance.getConnector(TEST_USER, new PasswordToken(Array[Byte]()))
     c.tableOperations.create(tableName)
     val bw = c.createBatchWriter(tableName, new BatchWriterConfig)
 
-    // populate the mock table
-    val dataList: util.Collection[(Key, Value)] = TestData.encodeDataList(entries)
-    dataList.map { case (key, value) =>
+    logger.debug("Add mutations.")
+    for {
+      entry        <- entries.par
+      (key, value) <- createObject(entry.id, entry.wkt, entry.dt)
+    } {
       val m: Mutation = new Mutation(key.getRow)
       m.put(key.getColumnFamily, key.getColumnQualifier, value)
       bw.addMutation(m)
     }
+
+//    entries.foreach { e =>
+//      createObject(e.id, e.wkt, e.dt)
+//    }
+//
+//    logger.debug("Built up dataList")
+//    // populate the mock table
+//    val dataList: util.Collection[(Key, Value)] = TestData.encodeDataList(entries)
+//
+//
+//    dataList.map { case (key, value) =>
+//      val m: Mutation = new Mutation(key.getRow)
+//      m.put(key.getColumnFamily, key.getColumnQualifier, value)
+//      bw.addMutation(m)
+//    }
+
+    logger.debug("Done adding mutations.")
 
     // add the schema description
     val mutSchema = new Mutation(s"~META_$featureName")
@@ -250,7 +272,7 @@ class SpatioTemporalIntersectingIteratorTest extends Specification {
   }
 
   def runMockAccumuloTest(label: String,
-                          entries: List[TestData.Entry] = TestData.fullData,
+                          entries: GenSeq[TestData.Entry] = TestData.fullData,
                           ecqlFilter: Option[String] = None,
                           dtFilter: Interval = null,
                           overrideGeometry: Boolean = false,
