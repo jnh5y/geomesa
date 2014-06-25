@@ -60,6 +60,8 @@ class IndexIteratorTest extends SpatioTemporalIntersectingIteratorTest {
     }
 
     def setupMockFeatureSource(entries: List[TestData.Entry]): SimpleFeatureStore = {
+      val TEST_TABLE = "test_table"
+
       val mockInstance = new MockInstance("dummy")
       val c = mockInstance.getConnector("user", new PasswordToken("pass".getBytes))
       if (c.tableOperations.exists(TEST_TABLE)) c.tableOperations.delete(TEST_TABLE)
@@ -75,7 +77,7 @@ class IndexIteratorTest extends SpatioTemporalIntersectingIteratorTest {
           userParam.key -> "user",
           passwordParam.key -> "pass",
           authsParam.key -> "S,USA",
-          tableNameParam.key -> "test_table",
+          tableNameParam.key -> TEST_TABLE,
           mockParam.key -> "true",
           featureEncParam.key -> "avro",
           idxSchemaParam.key -> TestData.schemaEncoding
@@ -94,7 +96,6 @@ class IndexIteratorTest extends SpatioTemporalIntersectingIteratorTest {
   override def runMockAccumuloTest(label: String,
                                    entries: List[TestData.Entry] = TestData.fullData,
                                    ecqlFilter: Option[String] = None,
-                                   numExpectedDataIn: Int = 113,
                                    dtFilter: Interval = null,
                                    overrideGeometry: Boolean = false,
                                    doPrint: Boolean = true): Int = {
