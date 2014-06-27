@@ -8,20 +8,20 @@ import scala.collection.JavaConversions._
 
 
 package object filter {
-  val ff = CommonFactoryFinder.getFilterFactory2
+  val ff2 = CommonFactoryFinder.getFilterFactory2
 
   def rewriteFilter(filter: Filter): Filter = {
     val ll =  logicDistribution(filter)
 
     if(ll.size == 1) {
       if(ll(0).size == 1) ll(0)(0)
-      else ff.and(ll(0))
+      else ff2.and(ll(0))
     }
-    else  ff.or(ll.map(l => ff.and(l)))
+    else  ff2.or(ll.map(l => ff2.and(l)))
   }
 
   def logicDistribution(x: Filter): List[List[Filter]] = x match {
-    case or: OrImpl  => or.getChildren.flatMap (logicDistribution).toList
+    case or: OrImpl  => or.getChildren.flatMap(logicDistribution).toList
 
     case and: AndImpl => and.getChildren.foldRight (List(List.empty[Filter])) {
       (f, dnf) => for {
@@ -41,9 +41,43 @@ package object filter {
   }
 
   def deMorgan(f: Filter): Filter = f match {
-    case and: AndImpl => ff.or(and.getChildren.map(a => ff.not(a)))
-    case or:  OrImpl  => ff.and(or.getChildren.map(a => ff.not(a)))
+    case and: AndImpl => ff2.or(and.getChildren.map(a => ff2.not(a)))
+    case or:  OrImpl  => ff2.and(or.getChildren.map(a => ff2.not(a)))
     case not: NotImpl => not.getFilter
+  }
+
+  val ex: Filter = Filter.EXCLUDE
+
+  def ld2(x: Filter): Filter = x match {
+
+    case or: OrImpl  => ff2.and(or.getChildren.map(ld2))
+
+    case and: AndImpl => {
+      val ands = and.getChildren.map(ld2)
+
+      ands.combinations(2).map { b =>
+        ff2.and(b(0), b(1))
+      }.toList
+
+      ff2.or(ands)
+//      val a = and.getChildren.foldRight( List[Filter](Filter.INCLUDE) ) {
+//        (f, dnf) => for {
+//          b <- dnf
+//          a = ld2(f)
+//        } yield ff2.and(a, b)
+//      }
+//
+//      ff2.or(a)
+    }
+    case not: NotImpl => {
+      not.getFilter match {
+        case and: AndImpl => ld2(deMorgan(and))
+        case or:  OrImpl => ld2(deMorgan(or))
+        case f: Filter => not
+      }
+    }
+
+    case f: Filter => f
   }
 
 }
