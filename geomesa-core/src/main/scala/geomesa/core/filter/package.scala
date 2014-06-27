@@ -1,83 +1,73 @@
 package geomesa.core
 
 import org.geotools.factory.CommonFactoryFinder
-import org.geotools.filter.{NotImpl, AndImpl, OrImpl, FilterAbstract}
-import org.geotools.filter.visitor.DefaultFilterVisitor
 import org.opengis.filter._
 import scala.collection.JavaConversions._
 
 
 package object filter {
-  val ff2 = CommonFactoryFinder.getFilterFactory2
+  // Claim: FilterFactory implementations seem to thread-safe away from
+  //  'namespace' and 'function' calls.
+  // As such, we can get away with using a shared Filter Factory.
+  implicit val ff = CommonFactoryFinder.getFilterFactory2
 
-  def rewriteFilter(filter: Filter): Filter = {
+  /**
+   * This function rewrites a org.opengis.filter.Filter in terms of a top-level OR with children filters which
+   * 1) do not contain further ORs, (i.e., ORs bubble up)
+   * 2) only contain at most one AND which is at the top of their 'tree'
+   *
+   * Note that this further implies that NOTs have been 'pushed down' and do have not have ANDs nor ORs as children.
+   *
+   * In boolean logic, this form is called disjunctive normal form (DNF).
+   *
+   * @param filter An arbitrary filter.
+   * @return       A filter in DNF (described above).
+   */
+  def rewriteFilter(filter: Filter)(implicit ff: FilterFactory): Filter = {
     val ll =  logicDistribution(filter)
-
     if(ll.size == 1) {
       if(ll(0).size == 1) ll(0)(0)
-      else ff2.and(ll(0))
+      else ff.and(ll(0))
     }
-    else  ff2.or(ll.map(l => ff2.and(l)))
+    else  ff.or(ll.map(l => ff.and(l)))
   }
 
-  def logicDistribution(x: Filter): List[List[Filter]] = x match {
-    case or: OrImpl  => or.getChildren.flatMap(logicDistribution).toList
+  /**
+   *
+   * @param x: An arbitrary @org.opengis.filter.Filter
+   * @return   A List[List[Filter]\] where the inner List of Filters are to be joined by
+   *           Ands and the outer list combined by Ors.
+   */
+  private[core] def logicDistribution(x: Filter): List[List[Filter]] = x match {
+    case or: Or  => or.getChildren.toList.flatMap(logicDistribution)
 
-    case and: AndImpl => and.getChildren.foldRight (List(List.empty[Filter])) {
+    case and: And => and.getChildren.foldRight (List(List.empty[Filter])) {
       (f, dnf) => for {
         a <- logicDistribution (f)
         b <- dnf
       } yield a ++ b
     }
-    case not: NotImpl => {
+
+    case not: Not =>
       not.getFilter match {
-        case and: AndImpl => logicDistribution(deMorgan(and))
-        case or:  OrImpl => logicDistribution(deMorgan(or))
+        case and: And => logicDistribution(deMorgan(and))
+        case or:  Or => logicDistribution(deMorgan(or))
         case f: Filter => List(List(not))
       }
-    }
 
     case f: Filter => List(List(f))
   }
 
-  def deMorgan(f: Filter): Filter = f match {
-    case and: AndImpl => ff2.or(and.getChildren.map(a => ff2.not(a)))
-    case or:  OrImpl  => ff2.and(or.getChildren.map(a => ff2.not(a)))
-    case not: NotImpl => not.getFilter
+  /**
+   *  The input is a filter which had a Not applied to it.
+   *  This function uses deMorgan's law to 'push the Not down'
+   *   as well as cancel adjacent Nots.
+   */
+  private[core] def deMorgan(f: Filter)(implicit ff: FilterFactory): Filter = f match {
+    case and: And => ff.or(and.getChildren.map(a => ff.not(a)))
+    case or:  Or  => ff.and(or.getChildren.map(a => ff.not(a)))
+    case not: Not => not.getFilter
   }
 
-  val ex: Filter = Filter.EXCLUDE
-
-  def ld2(x: Filter): Filter = x match {
-
-    case or: OrImpl  => ff2.and(or.getChildren.map(ld2))
-
-    case and: AndImpl => {
-      val ands = and.getChildren.map(ld2)
-
-      ands.combinations(2).map { b =>
-        ff2.and(b(0), b(1))
-      }.toList
-
-      ff2.or(ands)
-//      val a = and.getChildren.foldRight( List[Filter](Filter.INCLUDE) ) {
-//        (f, dnf) => for {
-//          b <- dnf
-//          a = ld2(f)
-//        } yield ff2.and(a, b)
-//      }
-//
-//      ff2.or(a)
-    }
-    case not: NotImpl => {
-      not.getFilter match {
-        case and: AndImpl => ld2(deMorgan(and))
-        case or:  OrImpl => ld2(deMorgan(or))
-        case f: Filter => not
-      }
-    }
-
-    case f: Filter => f
-  }
 
 }
