@@ -109,11 +109,11 @@ object FilterGenerator {
     (1, genNot)
   )
 
-  val genFreq: Gen[Filter] = oneOf(genBinary, genBaseFilter)
-//  val genFreq: Gen[Filter] = Gen.frequency(
-//    (1, genBinary),
-//    (2, genBaseFilter)
-//  )
+//  val genFreq: Gen[Filter] = oneOf(genBinary, genBaseFilter)
+  val genFreq: Gen[Filter] = Gen.frequency(
+    (1, genBinary),
+    (2, genBaseFilter)
+  )
 
   def getChildren2: Gen[List[Filter]] = for {
     n <- numChildren
