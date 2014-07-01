@@ -13,7 +13,7 @@ import org.specs2.specification.Fragments
 class FilterPackageObjectTest extends Specification {
 
   // Test deMorgan
-  "The deMorgan function" should {
+  def testDeMorgan(filter: Filter) = "The deMorgan function" should {
 
     "change ANDs to ORs" in {
 
@@ -124,12 +124,12 @@ class FilterPackageObjectTest extends Specification {
     checkStructure1 && checkStructure2 && checkStructure3 && checkEquivalent()
   }
 
-  def genFilter: Gen[Filter] = ???
-
-  implicit val genFilterImplicit = Arbitrary { genFilter }
-
-
-  Prop.forAll { f: Filter => { testRewriteProps(f) && testRewriteProps2(f) }  }
+//  def genFilter: Gen[Filter] = ???
+//
+//  implicit val genFilterImplicit = Arbitrary { genFilter }
+//
+//
+//  Prop.forAll { f: Filter => { testRewriteProps(f) && testRewriteProps2(f) }  }
 
 
   val l = (geom1 || date1).! && 1
@@ -172,4 +172,48 @@ class FilterPackageObjectTest3 extends Properties("Filters") {
 
   property("1") = forAll { (a: String) => true }
 
+  import org.scalacheck.Gen._
+
+  val genTopo = value("topo")
+  val genTime = value("time")
+  val genAttr = value("attr")
+
+  val genAtom = oneOf(genTopo, genTime, genAttr)
+
+  val genNot  = genAtom.map(s => s"NOT$s")
+
+  val numChildren = Gen.frequency(
+    (5, 2),
+    (3, 3),
+    (1, 4)
+  )
+    //.flatMap(Gen.listOfN(_, genFreq))
+  
+  def getChildren = for {
+    n <- numChildren
+    c <- Gen.listOfN(n, genFreq)
+  } yield c
+
+  val pickBinary = oneOf("OR", "AND")
+
+  val genBinary: Gen[String] = for {
+    l <- getChildren
+    b <- pickBinary
+  } yield { s"$b $l" }
+
+
+  //def genBaseFilter = oneOf(genNot, genTopo, genTemp, genAttr)
+
+  def genBaseFilter = Gen.frequency(
+    (2, genTopo),
+    (2, genTime),
+    (1, genAttr),
+    (1, genNot)
+  )
+
+  def genFreq = Gen.frequency(
+    (1, genBinary),
+    (2, genBaseFilter)
+  )
+  
 }
