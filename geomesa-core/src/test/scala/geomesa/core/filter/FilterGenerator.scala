@@ -1,13 +1,14 @@
 package geomesa.core.filter
 
+import geomesa.core.filter.FilterGenerator._
 import geomesa.core.filter._
 import geomesa.core.index.IndexSchema
 import geomesa.utils.geohash.BoundingBox
 import org.geotools.factory.CommonFactoryFinder
 import org.geotools.filter.text.ecql.ECQL
 import org.joda.time.{DateTime, Interval}
-import org.opengis.filter.{BinaryLogicOperator, Filter, Or}
-import org.scalacheck.Gen
+import org.opengis.filter.{BinaryLogicOperator, Filter, Or, And}
+import org.scalacheck.{Arbitrary, Gen}
 import org.scalacheck.Gen._
 import scala.annotation.tailrec
 import scala.collection.JavaConversions._
@@ -127,6 +128,15 @@ object FilterGenerator {
   )
 
 
+  def genOneLevelBinary[T](f: java.util.List[Filter] => T): Gen[T] =
+    getChildren.map(l => f(l))
+
+  val genOneLevelOr = genOneLevelBinary(ff.or)
+  val genOneLevelAnd = genOneLevelBinary(ff.and)
+
+  def runSamples[T](gen: Gen[T])(thunk: T => Any) = {
+    (0 until 10).foreach { _ => gen.sample.map(thunk) }
+  }
 }
 
 

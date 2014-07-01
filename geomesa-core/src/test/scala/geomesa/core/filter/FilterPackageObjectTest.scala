@@ -14,6 +14,7 @@ import org.opengis.filter._
 import org.specs2.specification.Fragments
 import scala.collection.JavaConversions._
 import com.typesafe.scalalogging.slf4j.Logging
+import org.scalacheck.Prop._
 
 import geomesa.core.iterators.TestData._
 
@@ -25,51 +26,94 @@ class FilterPackageObjectTest extends Specification with Logging {
   "The deMorgan function" should {
 
     "change ANDs to ORs" in {
+      runSamples(genOneLevelAnd) { f =>
+        val dm = deMorgan(f)
+        dm.isInstanceOf[Or] mustEqual true
+        val dmChildren = dm.asInstanceOf[Or].getChildren
+
+        f.getChildren.zip(dmChildren).map {
+          case (origChild, dmChild) =>
+            dmChild.isInstanceOf[Not] mustEqual true
+            dmChild.asInstanceOf[Not].getFilter mustEqual(origChild)
+        }
+      }
 
     }
 
     "change ORs to ANDs" in {
+      runSamples(genOneLevelOr) { f =>
+        val dm = deMorgan(f)
+        dm.isInstanceOf[And] mustEqual true
+        val dmChildren = dm.asInstanceOf[And].getChildren
 
+        f.getChildren.zip(dmChildren).map {
+          case (origChild, dmChild) =>
+            dmChild.isInstanceOf[Not] mustEqual true
+            dmChild.asInstanceOf[Not].getFilter mustEqual(origChild)
+        }
+      }
     }
 
     "be idempotent" in {
-
+      runSamples(genFreq) { f =>
+        val dmf = deMorgan(f)
+        val dmdmf = deMorgan(dmf)
+        dmf mustEqual dmdmf
+      }
     }
 
     "not affect filters without binary operators" in {
+      runSamples(genBaseFilter) { f =>
+        f mustEqual deMorgan(f)
+      }
 
     }
 
     "remove stacked NOTs" in {
-
+      runSamples(genNot) { f =>
+        deMorgan(ff.not(f)) mustEqual f.getFilter
+      }
     }
-
   }
 
 
   // Test logicDistribution
   "The function 'logicDistribution'" should {
+
+
     "split a top-level OR into a List of single-element Lists each containing a filter" in {
-
-
+      runSamples(genOneLevelOr) { or =>
+        val ll = logicDistribution(or)
+        ll.foreach { l => l.size mustEqual 1 }
+      }
     }
 
     "split a top-level AND into a a singleton List which contains a List of the ANDed filters" in {
+
+      runSamples(genOneLevelAnd) { and =>
+        val ll = logicDistribution(and)
+        ll.size mustEqual 1
+        and.getChildren.size mustEqual ll(0).size
+      }
 
     }
 
     "not return filters with ANDs or ORs explicitly stated" in {
       // NB: The nested lists imply ANDs and ORs.
       // Property-check.
-
+      runSamples(genFreq) { filter: Filter =>
+        val ll = logicDistribution(filter)
+        ll.flatten.foreach { l => l.isInstanceOf[BinaryLogicOperator] mustEqual false }
+      }
     }
 
     "take a 'simple' filter and return List(List(filter))" in {
-
+      runSamples(genBaseFilter) { f =>
+        val ll = logicDistribution(f)
+        ll.size mustEqual 0
+        ll(0).size mustEqual 0
+      }
     }
-
-
-
 
   }
 
