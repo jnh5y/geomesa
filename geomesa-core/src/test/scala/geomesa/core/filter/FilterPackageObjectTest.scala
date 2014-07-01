@@ -54,16 +54,8 @@ class FilterPackageObjectTest extends Specification with Logging {
       }
     }
 
-    "be idempotent" in {
-      runSamples(genFreq) { f =>
-        val dmf = deMorgan(f)
-        val dmdmf = deMorgan(dmf)
-        dmf mustEqual dmdmf
-      }
-    }
-
     "not affect filters without binary operators" in {
-      runSamples(genBaseFilter) { f =>
+      runSamples(genOneLevelAndOr) { f =>
         f mustEqual deMorgan(f)
       }
 
@@ -71,7 +63,7 @@ class FilterPackageObjectTest extends Specification with Logging {
 
     "remove stacked NOTs" in {
       runSamples(genNot) { f =>
-        deMorgan(ff.not(f)) mustEqual f.getFilter
+        deMorgan(f) mustEqual f.getFilter
       }
     }
   }
@@ -79,7 +71,6 @@ class FilterPackageObjectTest extends Specification with Logging {
 
   // Test logicDistribution
   "The function 'logicDistribution'" should {
-
 
     "split a top-level OR into a List of single-element Lists each containing a filter" in {
       runSamples(genOneLevelOr) { or =>
@@ -93,6 +84,8 @@ class FilterPackageObjectTest extends Specification with Logging {
       runSamples(genOneLevelAnd) { and =>
         val ll = logicDistribution(and)
         ll.size mustEqual 1
+
+        logger.debug(s"And: $and\nLL: $ll")
         and.getChildren.size mustEqual ll(0).size
       }
 
@@ -110,8 +103,8 @@ class FilterPackageObjectTest extends Specification with Logging {
     "take a 'simple' filter and return List(List(filter))" in {
       runSamples(genBaseFilter) { f =>
         val ll = logicDistribution(f)
-        ll.size mustEqual 0
-        ll(0).size mustEqual 0
+        ll.size mustEqual 1
+        ll(0).size mustEqual 1
       }
     }
 

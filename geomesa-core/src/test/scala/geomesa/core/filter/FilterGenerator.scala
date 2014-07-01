@@ -133,6 +133,7 @@ object FilterGenerator {
 
   val genOneLevelOr = genOneLevelBinary(ff.or)
   val genOneLevelAnd = genOneLevelBinary(ff.and)
+  val genOneLevelAndOr = oneOf(genOneLevelAnd, genOneLevelOr)
 
   def runSamples[T](gen: Gen[T])(thunk: T => Any) = {
     (0 until 10).foreach { _ => gen.sample.map(thunk) }
