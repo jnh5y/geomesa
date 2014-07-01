@@ -34,7 +34,7 @@ class FilterPackageObjectTest extends Specification with Logging {
         f.getChildren.zip(dmChildren).map {
           case (origChild, dmChild) =>
             dmChild.isInstanceOf[Not] mustEqual true
-            dmChild.asInstanceOf[Not].getFilter mustEqual(origChild)
+            dmChild.asInstanceOf[Not].getFilter mustEqual (origChild)
         }
       }
 
@@ -49,7 +49,7 @@ class FilterPackageObjectTest extends Specification with Logging {
         f.getChildren.zip(dmChildren).map {
           case (origChild, dmChild) =>
             dmChild.isInstanceOf[Not] mustEqual true
-            dmChild.asInstanceOf[Not].getFilter mustEqual(origChild)
+            dmChild.asInstanceOf[Not].getFilter mustEqual (origChild)
         }
       }
     }
@@ -75,7 +75,7 @@ class FilterPackageObjectTest extends Specification with Logging {
     "split a top-level OR into a List of single-element Lists each containing a filter" in {
       runSamples(genOneLevelOr) { or =>
         val ll = logicDistribution(or)
-        ll.foreach { l => l.size mustEqual 1 }
+        ll.foreach { l => l.size mustEqual 1}
       }
     }
 
@@ -96,7 +96,7 @@ class FilterPackageObjectTest extends Specification with Logging {
       // Property-check.
       runSamples(genFreq) { filter: Filter =>
         val ll = logicDistribution(filter)
-        ll.flatten.foreach { l => l.isInstanceOf[BinaryLogicOperator] mustEqual false }
+        ll.flatten.foreach { l => l.isInstanceOf[BinaryLogicOperator] mustEqual false}
       }
     }
 
@@ -132,7 +132,9 @@ class FilterPackageObjectTest extends Specification with Logging {
       val children = decomposeOr(rewrittenFilter)
 
       "return a Filter where the children of the (optional) OR can (optionally) be an AND" in {
-        children.map { _.isInstanceOf[Or] mustEqual false}
+        children.map {
+          _.isInstanceOf[Or] mustEqual false
+        }
       }
 
       "return a Filter where NOTs do not have ANDs or ORs as children" in {
@@ -148,82 +150,6 @@ class FilterPackageObjectTest extends Specification with Logging {
     }
   }
 
-  val g = genFreq
-  (0 until 10).foreach { i =>
-    logger.debug(s"Running test $i")
-    g.sample.map(testRewriteProps)
-  }
-
-  def test(i: Int) = {
-    "The function" should {
-      "add blah" in {
-        println("TESTING")
-        i mustEqual i
-      }
-    }
-  }
-
-  def testRewriteProps2(filter: Filter) = {
-    //"The function rewriteFilter" should {
-
-    val rewrittenFilter = rewriteFilter(filter)
-
-    //"return a Filter with at most one OR" in {
-    def checkStructure1(): Boolean = true
-
-    //"return a Filter where the children of the (optional) OR can (optionally) be an AND" in {
-    def checkStructure2(): Boolean = true
-
-
-    //"return a Filter where NOTs do not have ANDs or ORs as children" in {
-    def checkStructure3(): Boolean = true
-
-    // "return a Filter which is 'equivalent' to the original filter" in {
-    def checkEquivalent(): Boolean = true
-
-
-    checkStructure1 && checkStructure2 && checkStructure3 && checkEquivalent()
-  }
-
-//  def genFilter: Gen[Filter] = ???
-//
-//  implicit val genFilterImplicit = Arbitrary { genFilter }
-//
-//
-//  Prop.forAll { f: Filter => { testRewriteProps(f) && testRewriteProps2(f) }  }
-
-
-  val l = (geom1 || date1).! && 1
-  val r = (geom2 && 2).! || 6
-  val tree = ff.and(l, r)
-
-  rewriteFilter(l)
-
-  rewriteFilter(r)
-
-  rewriteFilter(tree)
+  runSamples(genFreq)(testRewriteProps)
 
 }
-
-class Quick extends Specification {
-  def test(i: Int) = {
-    "The function" should {
-      "add blah" in {
-        println("TESTING")
-        i mustEqual i
-      }
-    }
-  }
-  test(1)
-}
-
-@RunWith(classOf[JUnitRunner])
-class FilterPackageObjectTest2 extends Properties("Filters") {
-  //val a = implicitly(JUnitRunner)
-
-  import Prop.forAll
-
-  property("1") = forAll { (a: String) => true }
-
-}
-
