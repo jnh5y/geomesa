@@ -1,19 +1,18 @@
 package geomesa.core.data
 
 import com.typesafe.scalalogging.slf4j.Logging
-import geomesa.core.iterators.{TestData, SpatioTemporalIntersectingIteratorTest}
+import geomesa.core.index.IndexSchema
 import geomesa.core.iterators.TestData._
+import geomesa.core.iterators.{SpatioTemporalIntersectingIteratorTest, TestData}
+import org.apache.accumulo.core.client.Connector
+import org.geotools.data.Query
 import org.geotools.filter.text.ecql.ECQL
+import org.joda.time._
 import org.junit.runner.RunWith
+import org.opengis.feature.simple.SimpleFeature
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
-import org.geotools.data.Query
-import org.joda.time._
-import geomesa.core.index.IndexSchema
-import org.opengis.feature.simple.SimpleFeature
-import org.apache.accumulo.core.client.Connector
 import scala.collection.GenSeq
-import scala.collection.parallel.ParSeq
 
 @RunWith(classOf[JUnitRunner])
 class FilterTest extends Specification with Logging {
@@ -37,7 +36,6 @@ class FilterTest extends Specification with Logging {
 
   // Predicates which are downright silly
   val silly = List("TOUCHES", "EQUALS")
-
 
   // Worthless predicates: predicats which don't return results against 'fullData'.
   val untested = List("CONTAINS", "TOUCHES", "EQUALS", "DISJOINT", "CROSSES")

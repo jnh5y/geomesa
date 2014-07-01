@@ -1,28 +1,18 @@
 package geomesa.core.filter
 
-import geomesa.core.filter.OrSplittingFilterTest._
-import geomesa.core.index.IndexSchema
-import org.geotools.filter.text.ecql.ECQL
-import geomesa.core.filter.FilterUtils._
-import org.joda.time.{DateTime, Interval}
-import org.junit.runner.RunWith
-import org.scalacheck.{Arbitrary, Properties, Prop, Gen}
-import org.specs2.mutable.Specification
-import geomesa.core.filter.FilterGenerator._
-import org.specs2.runner.JUnitRunner
-import org.opengis.filter._
-import org.specs2.specification.Fragments
-import scala.collection.JavaConversions._
 import com.typesafe.scalalogging.slf4j.Logging
-import org.scalacheck.Prop._
-
+import geomesa.core.filter.FilterGenerator._
+import geomesa.core.filter.FilterUtils._
 import geomesa.core.iterators.TestData._
+import org.junit.runner.RunWith
+import org.opengis.filter._
+import org.specs2.mutable.Specification
+import org.specs2.runner.JUnitRunner
+import scala.collection.JavaConversions._
 
 @RunWith(classOf[JUnitRunner])
 class FilterPackageObjectTest extends Specification with Logging {
 
-  // Test deMorgan
-  //def testDeMorgan(filter: Filter) =
   "The deMorgan function" should {
 
     "change ANDs to ORs" in {
@@ -34,10 +24,9 @@ class FilterPackageObjectTest extends Specification with Logging {
         f.getChildren.zip(dmChildren).map {
           case (origChild, dmChild) =>
             dmChild.isInstanceOf[Not] mustEqual true
-            dmChild.asInstanceOf[Not].getFilter mustEqual (origChild)
+            dmChild.asInstanceOf[Not].getFilter mustEqual origChild
         }
       }
-
     }
 
     "change ORs to ANDs" in {
@@ -49,16 +38,9 @@ class FilterPackageObjectTest extends Specification with Logging {
         f.getChildren.zip(dmChildren).map {
           case (origChild, dmChild) =>
             dmChild.isInstanceOf[Not] mustEqual true
-            dmChild.asInstanceOf[Not].getFilter mustEqual (origChild)
+            dmChild.asInstanceOf[Not].getFilter mustEqual origChild
         }
       }
-    }
-
-    "not affect filters without binary operators" in {
-      runSamples(genOneLevelAndOr) { f =>
-        f mustEqual deMorgan(f)
-      }
-
     }
 
     "remove stacked NOTs" in {
@@ -68,13 +50,13 @@ class FilterPackageObjectTest extends Specification with Logging {
     }
   }
 
-
   // Test logicDistribution
   "The function 'logicDistribution'" should {
 
     "split a top-level OR into a List of single-element Lists each containing a filter" in {
       runSamples(genOneLevelOr) { or =>
         val ll = logicDistribution(or)
+        logger.debug(s"\n****Or: $or\n****LL: $ll")
         ll.foreach { l => l.size mustEqual 1}
       }
     }
@@ -83,9 +65,9 @@ class FilterPackageObjectTest extends Specification with Logging {
 
       runSamples(genOneLevelAnd) { and =>
         val ll = logicDistribution(and)
+        logger.debug(s"\n****And: $and\n****LL: $ll")
         ll.size mustEqual 1
 
-        logger.debug(s"And: $and\nLL: $ll")
         and.getChildren.size mustEqual ll(0).size
       }
 
@@ -93,7 +75,6 @@ class FilterPackageObjectTest extends Specification with Logging {
 
     "not return filters with ANDs or ORs explicitly stated" in {
       // NB: The nested lists imply ANDs and ORs.
-      // Property-check.
       runSamples(genFreq) { filter: Filter =>
         val ll = logicDistribution(filter)
         ll.flatten.foreach { l => l.isInstanceOf[BinaryLogicOperator] mustEqual false}
@@ -107,23 +88,19 @@ class FilterPackageObjectTest extends Specification with Logging {
         ll(0).size mustEqual 1
       }
     }
-
   }
 
+  val hugeDataFeatures = hugeData.map(createSF)
 
   // Function defining rewriteFilter Properties.
   def testRewriteProps(filter: Filter) = {
     logger.debug(s"Filter: $filter")
 
     "The function rewriteFilter" should {
-
       val rewrittenFilter: Filter = rewriteFilter(filter)
-
-      logger.debug(s"Rewritten as $rewrittenFilter")
 
       "return a Filter with at most one OR at the top" in {
         val decomp = decomposeBinary(rewrittenFilter)
-
         val orCount = decomp.count(_.isInstanceOf[Or])
 
         orCount mustEqual 0
@@ -132,9 +109,7 @@ class FilterPackageObjectTest extends Specification with Logging {
       val children = decomposeOr(rewrittenFilter)
 
       "return a Filter where the children of the (optional) OR can (optionally) be an AND" in {
-        children.map {
-          _.isInstanceOf[Or] mustEqual false
-        }
+        children.map { _.isInstanceOf[Or] mustEqual false }
       }
 
       "return a Filter where NOTs do not have ANDs or ORs as children" in {
@@ -144,12 +119,13 @@ class FilterPackageObjectTest extends Specification with Logging {
       }
 
       "return a Filter which is 'equivalent' to the original filter" in {
-        fullData.filter(rewrittenFilter.evaluate) mustEqual fullData.filter(filter.evaluate)
+        val originalCount = hugeDataFeatures.count(filter.evaluate)
+        val rewriteCount = hugeDataFeatures.count(rewrittenFilter.evaluate)
+        logger.debug(s"\nFilter: $filter\nFullData size: ${hugeDataFeatures.size}: filter hits: $originalCount rewrite hits: $rewriteCount")
+        rewriteCount mustEqual originalCount
       }
-
     }
   }
 
   runSamples(genFreq)(testRewriteProps)
-
 }
