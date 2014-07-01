@@ -6,9 +6,11 @@ import geomesa.utils.geohash.BoundingBox
 import org.geotools.factory.CommonFactoryFinder
 import org.geotools.filter.text.ecql.ECQL
 import org.joda.time.{DateTime, Interval}
-import org.opengis.filter.Filter
+import org.opengis.filter.{BinaryLogicOperator, Filter, Or}
 import org.scalacheck.Gen
 import org.scalacheck.Gen._
+import scala.annotation.tailrec
+import scala.collection.JavaConversions._
 import scala.collection.immutable.NumericRange
 import scala.runtime.RangedProxy
 
@@ -123,6 +125,28 @@ object FilterGenerator {
     (1, genBinary),
     (2, genBaseFilter)
   )
+
+
+}
+
+
+object FilterUtils {
+
+  def decomposeBinary(f: Filter): Seq[Filter] = {
+    f match {
+      case b: BinaryLogicOperator => b.getChildren.toSeq.flatMap(decomposeBinary)
+      case f: Filter => Seq(f)
+    }
+  }
+
+  def decomposeOr(f: Filter): Seq[Filter] = {
+    f match {
+      case b: Or => b.getChildren.toSeq.flatMap(decomposeOr)
+      case f: Filter => Seq(f)
+    }
+  }
+
+
 
 
 }

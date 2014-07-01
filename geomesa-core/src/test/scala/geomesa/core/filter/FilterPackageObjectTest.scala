@@ -3,6 +3,7 @@ package geomesa.core.filter
 import geomesa.core.filter.OrSplittingFilterTest._
 import geomesa.core.index.IndexSchema
 import org.geotools.filter.text.ecql.ECQL
+import geomesa.core.filter.FilterUtils._
 import org.joda.time.{DateTime, Interval}
 import org.junit.runner.RunWith
 import org.scalacheck.{Arbitrary, Properties, Prop, Gen}
@@ -12,12 +13,16 @@ import org.specs2.runner.JUnitRunner
 import org.opengis.filter._
 import org.specs2.specification.Fragments
 import scala.collection.JavaConversions._
+import com.typesafe.scalalogging.slf4j.Logging
+
+import geomesa.core.iterators.TestData._
 
 @RunWith(classOf[JUnitRunner])
-class FilterPackageObjectTest extends Specification {
+class FilterPackageObjectTest extends Specification with Logging {
 
   // Test deMorgan
-  def testDeMorgan(filter: Filter) = "The deMorgan function" should {
+  //def testDeMorgan(filter: Filter) =
+  "The deMorgan function" should {
 
     "change ANDs to ORs" in {
 
@@ -71,31 +76,46 @@ class FilterPackageObjectTest extends Specification {
 
   // Function defining rewriteFilter Properties.
   def testRewriteProps(filter: Filter) = {
+    logger.debug(s"Filter: $filter")
+
     "The function rewriteFilter" should {
 
-      val rewrittenFilter = rewriteFilter(filter)
+      val rewrittenFilter: Filter = rewriteFilter(filter)
 
-      "return a Filter with at most one OR" in {
+      logger.debug(s"Rewritten as $rewrittenFilter")
 
+      "return a Filter with at most one OR at the top" in {
+        val decomp = decomposeBinary(rewrittenFilter)
 
+        val orCount = decomp.count(_.isInstanceOf[Or])
+
+        orCount mustEqual 0
       }
 
-      "return a Filter where the children of the (optional) OR can (optionally) be an AND" in {
+      val children = decomposeOr(rewrittenFilter)
 
+      "return a Filter where the children of the (optional) OR can (optionally) be an AND" in {
+        children.map { _.isInstanceOf[Or] mustEqual false}
       }
 
       "return a Filter where NOTs do not have ANDs or ORs as children" in {
-
+        children.filter(_.isInstanceOf[Not]).foreach { f =>
+          f.isInstanceOf[BinaryLogicOperator] mustEqual false
+        }
       }
 
       "return a Filter which is 'equivalent' to the original filter" in {
-
+        fullData.filter(rewrittenFilter.evaluate) mustEqual fullData.filter(filter.evaluate)
       }
 
     }
-    true
   }
 
+  val g = genFreq
+  (0 until 10).foreach { i =>
+    logger.debug(s"Running test $i")
+    g.sample.map(testRewriteProps)
+  }
 
   def test(i: Int) = {
     "The function" should {
