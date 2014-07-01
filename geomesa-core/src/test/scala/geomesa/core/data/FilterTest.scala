@@ -10,6 +10,8 @@ import org.geotools.filter.text.ecql.ECQL
 import org.joda.time._
 import org.junit.runner.RunWith
 import org.opengis.feature.simple.SimpleFeature
+import org.opengis.filter.Filter
+import org.specs2.matcher.MatchResult
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 import scala.collection.GenSeq
@@ -108,9 +110,23 @@ class FilterTest extends Specification with Logging {
     }
   }
 
-  def compare(fs: String, features: GenSeq[SimpleFeature], target: String, conn: Connector) = {
-    val bs = () => conn.createBatchScanner(target, TEST_AUTHORIZATIONS, 5)
+  import geomesa.core.filter.FilterGenerator._
+
+  runSamples(genFreq) { fs => s"Filter $fs should work the same" should {
+        "in Mock GeoMesa and directly for the fullDataFeatures" in {
+            compare(fs, fullDataFeatures, "fullData", fullDataConnector)
+          }
+        }
+      }
+
+  def compare(fs: String, features: GenSeq[SimpleFeature], target: String, conn: Connector): MatchResult[Any] = {
     val filter = ECQL.toFilter(fs)
+    compare(filter, features, target, conn)
+  }
+
+  def compare(filter: Filter, features: GenSeq[SimpleFeature], target: String, conn: Connector): MatchResult[Any] = {
+    val bs = () => conn.createBatchScanner(target, TEST_AUTHORIZATIONS, 5)
+
 
     val q = new Query(TestData.featureType.getTypeName, filter)
 
@@ -118,7 +134,7 @@ class FilterTest extends Specification with Logging {
     val mockNumber: Int = stiit.runQuery(q, bs, false)
 
     //if(filteredNumber != mockNumber)
-      logger.debug(s"Filter against $target: $fs filtered: $filteredNumber mockNumber: $mockNumber")
+      logger.debug(s"Filter against $target: $filter filtered: $filteredNumber mockNumber: $mockNumber")
 
     filteredNumber mustEqual mockNumber
   }
