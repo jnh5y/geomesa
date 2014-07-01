@@ -51,7 +51,6 @@ object FilterGenerator {
     g
   }
 
-
   def genGeom = oneOf("(geomesa_index_geometry, POLYGON ((45 23, 48 23, 48 27, 45 27, 45 23)))",
     "(geomesa_index_geometry, POLYGON ((41 28, 42 28, 42 29, 41 29, 41 28)))",
     "(geomesa_index_geometry, POLYGON ((44 23, 46 23, 46 25, 44 25, 44 23)))")
@@ -76,8 +75,6 @@ object FilterGenerator {
 
   def genAttr = Gen.choose(0, 100).map(intToAttributeFilter)
 
-  ///val genAttr = value("attr")
-
   def genAtom = oneOf(genTopo, genTime, genAttr)
 
   def genNot  = genAtom.map(ff.not)
@@ -87,7 +84,6 @@ object FilterGenerator {
     (3, 3),
     (1, 4)
   )
-  //.flatMap(Gen.listOfN(_, genFreq))
 
   def getChildren: Gen[List[Filter]] = for {
     n <- numChildren
@@ -132,7 +128,6 @@ object FilterGenerator {
     (0 until 10).foreach { _ => gen.sample.map(thunk) }
   }
 }
-
 
 object FilterUtils {
   def decomposeBinary(f: Filter): Seq[Filter] = {
