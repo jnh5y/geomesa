@@ -83,9 +83,9 @@ class FilterToAccumulo(sft: SimpleFeatureType) {
     }
 
     def during: Filter = raw match {
-      case f: BinaryTemporalOperator => f
-      case _                         =>
-        ff.during(ff.property(dtgFieldName), ff.literal(interval))
+      case f: BinaryTemporalOperator => println("BinaryTemporalOperator"); f
+      case _                         => println("Base case using interval2lit")
+        ff.during(ff.property(dtgFieldName), interval2lit(interval))
     }
   }
 
@@ -198,8 +198,7 @@ class FilterToAccumulo(sft: SimpleFeatureType) {
         case (MinTime, e)        =>
           ff.not(ff.before(ff.property(dtgFieldName), dt2lit(e)))
         case (s, e)              =>
-          ff.not(ff.during(ff.property(dtgFieldName),
-            ff.literal(dts2lit(s, e))))
+          ff.not(ff.during(ff.property(dtgFieldName), dts2lit(s, e)))
       }
     } else Filter.INCLUDE
 

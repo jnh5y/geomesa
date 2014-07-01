@@ -55,7 +55,7 @@ object FilterGenerator {
     "(geomesa_index_geometry, POLYGON ((41 28, 42 28, 42 29, 41 29, 41 28)))",
     "(geomesa_index_geometry, POLYGON ((44 23, 46 23, 46 25, 44 25, 44 23)))")
 
-  def genTopoPred = oneOf("INTERSECTS", "OVERLAPS", "WITHIN")
+  def genTopoPred = Gen.const("INTERSECTS") //oneOf("INTERSECTS", "OVERLAPS", "WITHIN")
 
   def genTopoString = for {
     geom <- genGeom
@@ -107,8 +107,8 @@ object FilterGenerator {
 
 //  val genFreq: Gen[Filter] = oneOf(genBinary, genBaseFilter)
   val genFreq: Gen[Filter] = Gen.frequency(
-    (1, genBinary),
-    (2, genBaseFilter)
+    (2, genBinary),
+    (3, genBaseFilter)
   )
 
   def getChildren2: Gen[List[Filter]] = for {

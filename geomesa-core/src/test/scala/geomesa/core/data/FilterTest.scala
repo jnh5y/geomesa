@@ -103,18 +103,22 @@ class FilterTest extends Specification with Logging {
 
   //basicFilters.map{ fs => s"Filter $fs should work the same" should {
 
-  filters.map{ fs => s"Filter $fs should work the same" should {
-    "in Mock GeoMesa and directly for the hugeDataFeatures" in {
-      compare(fs, hugeDataFeatures, "hugeData", hugeDataConnector)
-      }
-    }
-  }
+//  filters.map{ fs => s"Filter $fs should work the same" should {
+//    "in Mock GeoMesa and directly for the hugeDataFeatures" in {
+//      compare(fs, hugeDataFeatures, "hugeData", hugeDataConnector)
+//      }
+//    }
+//  }
 
   import geomesa.core.filter.FilterGenerator._
 
   runSamples(genFreq) { fs => s"Filter $fs should work the same" should {
         "in Mock GeoMesa and directly for the fullDataFeatures" in {
             compare(fs, fullDataFeatures, "fullData", fullDataConnector)
+          }
+
+        "in Mock GeoMesa and directly for the hugeDataFeatures" in {
+          compare(fs, hugeDataFeatures, "hugeData", hugeDataConnector)
           }
         }
       }
