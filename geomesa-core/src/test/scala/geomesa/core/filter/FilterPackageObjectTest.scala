@@ -1,6 +1,9 @@
 package geomesa.core.filter
 
 import geomesa.core.filter.OrSplittingFilterTest._
+import geomesa.core.index.IndexSchema
+import org.geotools.filter.text.ecql.ECQL
+import org.joda.time.{DateTime, Interval}
 import org.junit.runner.RunWith
 import org.scalacheck.{Arbitrary, Properties, Prop, Gen}
 import org.specs2.mutable.Specification
@@ -8,6 +11,7 @@ import geomesa.core.filter.FilterGenerator._
 import org.specs2.runner.JUnitRunner
 import org.opengis.filter._
 import org.specs2.specification.Fragments
+import scala.collection.JavaConversions._
 
 @RunWith(classOf[JUnitRunner])
 class FilterPackageObjectTest extends Specification {
@@ -168,19 +172,39 @@ class FilterPackageObjectTest2 extends Properties("Filters") {
 
 
 class FilterPackageObjectTest3 extends Properties("Filters") {
-  import Prop.forAll
 
-  property("1") = forAll { (a: String) => true }
 
   import org.scalacheck.Gen._
 
-  val genTopo = value("topo")
-  val genTime = value("time")
-  val genAttr = value("attr")
+  val genGeom = oneOf("(geomesa_index_geometry, POLYGON ((45 23, 48 23, 48 27, 45 27, 45 23)))",
+    "(geomesa_index_geometry, POLYGON ((41 28, 42 28, 42 29, 41 29, 41 28)))",
+    "(geomesa_index_geometry, POLYGON ((44 23, 46 23, 46 25, 44 25, 44 23)))")
+
+  val genTopoPred = oneOf("INTERSECTS", "OVERLAPS", "WITHIN")
+
+  val genTopoString = for {
+    geom <- genGeom
+    pred <- genTopoPred
+  } yield s"$pred$geom"
+
+  val genTopo: Gen[Filter] = genTopoString.map(ECQL.toFilter)
+
+  def dt(int: Interval): String =
+    s"(geomesa_index_start_time between '${int.getStart}' AND '${int.getEnd}')"
+
+  val genTimeString =
+    oneOf(IndexSchema.everywhen,
+      new Interval(new DateTime("2010-07-01T00:00:00.000Z"), new DateTime("2010-07-31T00:00:00.000Z")))
+
+  val genTime = genTimeString.map(i => ECQL.toFilter(dt(i)))
+
+  val genAttr = Gen.choose(0, 100).map(intToAttributeFilter)
+
+  ///val genAttr = value("attr")
 
   val genAtom = oneOf(genTopo, genTime, genAttr)
 
-  val genNot  = genAtom.map(s => s"NOT$s")
+  val genNot  = genAtom.map(ff.not)
 
   val numChildren = Gen.frequency(
     (5, 2),
@@ -189,29 +213,29 @@ class FilterPackageObjectTest3 extends Properties("Filters") {
   )
     //.flatMap(Gen.listOfN(_, genFreq))
   
-  def getChildren = for {
+  def getChildren: Gen[List[Filter]] = for {
     n <- numChildren
     c <- Gen.listOfN(n, genFreq)
   } yield c
 
-  val pickBinary = oneOf("OR", "AND")
+  val pickBinary: Gen[java.util.List[Filter] => Filter] = oneOf(Seq[java.util.List[Filter] => Filter](ff.or, ff.and))
 
-  val genBinary: Gen[String] = for {
+  val genBinary: Gen[Filter] = for {
     l <- getChildren
     b <- pickBinary
-  } yield { s"$b $l" }
+  } yield { b(l) }
 
 
   //def genBaseFilter = oneOf(genNot, genTopo, genTemp, genAttr)
 
-  def genBaseFilter = Gen.frequency(
+  def genBaseFilter: Gen[Filter] = Gen.frequency(
     (2, genTopo),
     (2, genTime),
     (1, genAttr),
     (1, genNot)
   )
 
-  def genFreq = Gen.frequency(
+  def genFreq: Gen[Filter] = Gen.frequency(
     (1, genBinary),
     (2, genBaseFilter)
   )
