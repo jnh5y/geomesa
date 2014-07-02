@@ -111,8 +111,9 @@ class FilterTest extends Specification with Logging {
 //  }
 
   import geomesa.core.filter.FilterGenerator._
+  import geomesa.core.filter.SmallFilters._
 
-  runSamples(genFreqPositive) { fs => s"Filter $fs should work the same" should {
+  runSamples(oneGeomTrees) { fs => s"Filter $fs should work the same" should {
       "in Mock GeoMesa and directly for the fullDataFeatures" in {
         compare(fs, fullDataFeatures, "fullData", fullDataConnector)
       }

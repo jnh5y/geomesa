@@ -110,28 +110,6 @@ object FilterGenerator {
     (3, genBaseFilter)
   )
 
-  def getChildrenPositive: Gen[List[Filter]] = for {
-    n <- numChildren
-    c <- Gen.listOfN(n, genFreqPositive)
-  } yield c
-
-
-  val genBinaryPositive: Gen[Filter] = for {
-    l <- getChildrenPositive
-    b <- pickBinary
-  } yield { b(l) }
-
-  val genBaseFilterPositive: Gen[Filter] = Gen.frequency(
-    (2, genTopo),
-    (2, genTime),
-    (1, genAttr)
-  )
-
-  val genFreqPositive: Gen[Filter] = Gen.frequency(
-    (2, genBinaryPositive),
-    (3, genBaseFilterPositive)
-  )
-
   def getChildren2: Gen[List[Filter]] = for {
     n <- numChildren
     c <- Gen.listOfN(n, oneOf(genTopo, genAttr))
@@ -148,6 +126,45 @@ object FilterGenerator {
   def runSamples[T](gen: Gen[T])(thunk: T => Any) = {
     (0 until 20).foreach { _ => gen.sample.map(thunk) }
   }
+}
+
+import FilterGenerator._
+import FilterUtils._
+
+object SmallFilters {
+
+  def getChildrenPositive: Gen[List[Filter]] = for {
+    n <- numChildren
+    c <- Gen.listOfN(n, genBaseFilterPositive)
+  } yield c
+
+
+  val genTreeHeight1: Gen[Filter] = for {
+    l <- getChildrenPositive
+    b <- pickBinary
+  } yield { b(l) }
+
+  val genBaseFilterPositive: Gen[Filter] = Gen.frequency(
+    (2, genTopo),
+    (2, genTime),
+    (1, genAttr)
+  )
+
+  val genTreeHeight2: Gen[Filter] = for {
+    n <- numChildren
+    l <- Gen.listOfN(n, genTreeHeight1)
+    b <- pickBinary
+  } yield b(l)
+
+  val genSmallTrees: Gen[Filter] = Gen.frequency(
+    (1, genTreeHeight1),
+    (2, genTreeHeight2),
+    (3, genBaseFilterPositive)
+  )
+
+  val oneGeomTrees = genSmallTrees.filter(f =>
+    decomposeBinary(f).count(_.isInstanceOf[org.opengis.filter.spatial.BinarySpatialOperator]) < 2
+  )
 }
 
 object FilterUtils {

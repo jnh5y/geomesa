@@ -19,7 +19,9 @@ package geomesa.utils.filters
 import org.geotools.temporal.`object`.{DefaultPosition, DefaultInstant, DefaultPeriod}
 import org.joda.time.{Interval, DateTime}
 import org.opengis.filter.expression.Expression
+import org.opengis.filter._
 import org.geotools.factory.CommonFactoryFinder
+import scala.collection.JavaConversions._
 
 object Filters {
   val ff = CommonFactoryFinder.getFilterFactory2
@@ -33,4 +35,15 @@ object Filters {
     ))
 
   def interval2lit(int: Interval): Expression = dts2lit(int.getStart, int.getEnd)
+
+
+  def depthOfFilter(f: Filter): Int = {
+    def depthOfFilter(f: Filter, acc: Int): Int = {
+      f match {
+        case b: BinaryLogicOperator => b.getChildren.map(c => depthOfFilter(c, acc)).max + 1
+        case _ => 1
+      }
+    }
+    depthOfFilter(f, 0)
+  }
 }
