@@ -124,7 +124,7 @@ object FilterGenerator {
   def genOneLevelAndOr = oneOf(genOneLevelAnd, genOneLevelOr)
 
   def runSamples[T](gen: Gen[T])(thunk: T => Any) = {
-    (0 until 20).foreach { _ => gen.sample.map(thunk) }
+    (0 until 200).foreach { _ => gen.sample.map(thunk) }
   }
 }
 
