@@ -88,7 +88,10 @@ case class IndexQueryPlanner(keyPlanner: KeyPlanner,
     val rewrittenFilter = rewriteFilter(originalFilter)
     
     val orSplitter = new OrSplittingFilter
-    val filters = orSplitter.visit(rewrittenFilter, null)
+    val splitFilters = orSplitter.visit(rewrittenFilter, null)
+
+    // Let's just check quickly to see if we can eliminate any duplicates.
+    val filters = splitFilters.distinct
 
     filters.map { filter =>
       val q = new Query(query)
@@ -106,8 +109,6 @@ case class IndexQueryPlanner(keyPlanner: KeyPlanner,
 
     val filterVisitor = new FilterToAccumulo(featureType)
     val rewrittenCQL: Filter = filterVisitor.visit(query)
-
-    logger.debug(s"Original query: \n${query.getFilter}\nrewritten query: ${ECQL.toCQL(rewrittenCQL)}")
 
     val ecql = Option(ECQL.toCQL(rewrittenCQL))
 

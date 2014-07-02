@@ -535,6 +535,7 @@
                         <jvmArg>-Xmx1024m</jvmArg>
                     </jvmArgs>
                     <args>
+                        <arg>-feature</arg>
                         <arg>-unchecked</arg>
                         <arg>-deprecation</arg>
                     </args>

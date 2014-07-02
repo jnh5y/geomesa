@@ -112,16 +112,16 @@ class FilterTest extends Specification with Logging {
 
   import geomesa.core.filter.FilterGenerator._
 
-  runSamples(genFreq) { fs => s"Filter $fs should work the same" should {
-        "in Mock GeoMesa and directly for the fullDataFeatures" in {
-            compare(fs, fullDataFeatures, "fullData", fullDataConnector)
-          }
-
-        "in Mock GeoMesa and directly for the hugeDataFeatures" in {
-          compare(fs, hugeDataFeatures, "hugeData", hugeDataConnector)
-          }
-        }
+  runSamples(genFreqPositive) { fs => s"Filter $fs should work the same" should {
+      "in Mock GeoMesa and directly for the fullDataFeatures" in {
+        compare(fs, fullDataFeatures, "fullData", fullDataConnector)
       }
+
+      "in Mock GeoMesa and directly for the hugeDataFeatures" in {
+        compare(fs, hugeDataFeatures, "hugeData", hugeDataConnector)
+      }
+    }
+  }
 
   def compare(fs: String, features: GenSeq[SimpleFeature], target: String, conn: Connector): MatchResult[Any] = {
     val filter = ECQL.toFilter(fs)
@@ -135,10 +135,18 @@ class FilterTest extends Specification with Logging {
     val q = new Query(TestData.featureType.getTypeName, filter)
 
     val filteredNumber: Int = features.count(filter.evaluate)
+
+    val start = System.currentTimeMillis
+
+    logger.debug(s"Starting query against $target: ${ECQL.toCQL(filter)}")
+
     val mockNumber: Int = stiit.runQuery(q, bs, false)
 
     //if(filteredNumber != mockNumber)
-      logger.debug(s"Filter against $target: $filter filtered: $filteredNumber mockNumber: $mockNumber")
+    val end = System.currentTimeMillis()
+    val diff = (end-start)/1000.0
+
+   logger.debug(s"Filter ${ECQL.toCQL(filter)} finished in $diff seconds filtered: $filteredNumber mockNumber: $mockNumber")
 
     filteredNumber mustEqual mockNumber
   }
