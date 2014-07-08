@@ -1,5 +1,6 @@
 package geomesa.core.index
 
+import com.typesafe.scalalogging.slf4j.Logging
 import com.vividsolutions.jts.geom.Polygon
 import geomesa.core._
 import geomesa.core.data._
@@ -19,6 +20,7 @@ import org.geotools.filter.text.ecql.ECQL
 import org.geotools.geometry.jts.ReferencedEnvelope
 import org.joda.time.Interval
 import org.opengis.feature.simple.SimpleFeatureType
+import org.opengis.filter.Filter
 import scala.collection.JavaConversions._
 import scala.util.Random
 
@@ -35,7 +37,7 @@ case class IndexQueryPlanner(keyPlanner: KeyPlanner,
                              cfPlanner: ColumnFamilyPlanner,
                              schema:String,
                              featureType: SimpleFeatureType,
-                             featureEncoder: SimpleFeatureEncoder) {
+                             featureEncoder: SimpleFeatureEncoder) extends Logging {
 
   private val log = Logger.getLogger(classOf[IndexQueryPlanner])
 
@@ -106,7 +108,8 @@ case class IndexQueryPlanner(keyPlanner: KeyPlanner,
     val bs: BatchScanner = buildBatchScanner()
 
     val filterVisitor = new FilterToAccumulo(featureType)
-    val rewrittenCQL = filterVisitor.visit(query)
+    val rewrittenCQL: Filter = filterVisitor.visit(query)
+
     val ecql = Option(ECQL.toCQL(rewrittenCQL))
 
     val spatial = filterVisitor.spatialPredicate

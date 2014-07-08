@@ -1,10 +1,11 @@
 package geomesa.core.filter
 
 import com.typesafe.scalalogging.slf4j.Logging
-import geomesa.core.filter.FilterUtils._
+import geomesa.core.filter._
 import geomesa.core.filter.TestFilters._
-import geomesa.core.iterators.TestData._
 import org.geotools.filter.text.ecql.ECQL
+import geomesa.core.filter.FilterUtils._
+import geomesa.core.iterators.TestData._
 import org.junit.runner.RunWith
 import org.opengis.filter._
 import org.specs2.mutable.Specification

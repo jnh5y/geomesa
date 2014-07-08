@@ -480,6 +480,12 @@
                 <artifactId>gt-geometry</artifactId>
                 <version>${gt.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.scalacheck</groupId>
+                <artifactId>scalacheck_2.10</artifactId>
+                <version>1.11.4</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -551,7 +557,6 @@
                     </jvmArgs>
                     <recompileMode>incremental</recompileMode>
                     <args>
-                        <arg>-nowarn</arg>
                         <arg>-unchecked</arg>
                         <arg>-deprecation</arg>
                     </args>
