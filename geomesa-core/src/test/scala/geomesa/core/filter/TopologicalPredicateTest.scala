@@ -20,7 +20,7 @@ import scala.collection.JavaConverters._
 import geomesa.core.filter.FilterUtils._
 
 
-//@RunWith(classOf[JUnitRunner])
+@RunWith(classOf[JUnitRunner])
 class AllPredicateTest extends Specification with FilterTester {
   sequential
   println(s"Value of allPreds $allPreds")
@@ -28,13 +28,13 @@ class AllPredicateTest extends Specification with FilterTester {
   runTest
 }
 
-//@RunWith(classOf[JUnitRunner])
+@RunWith(classOf[JUnitRunner])
 class AndGeomsPredicateTest extends FilterTester {
   val filters = andGeoms
   runTest
 }
 
-//@RunWith(classOf[JUnitRunner])
+@RunWith(classOf[JUnitRunner])
 class OrGeomsPredicateTest extends FilterTester {
   val filters = orGeoms
   runTest
