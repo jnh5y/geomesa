@@ -156,7 +156,6 @@ object TestData extends Logging {
       Seq(lsEntry, polyEntry)
     }
 
-
     pts ++ linesPolys
   }
 
