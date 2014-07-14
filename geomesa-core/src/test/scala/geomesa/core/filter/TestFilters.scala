@@ -109,9 +109,9 @@ object TestFilters {
       "INTERSECTS(geom, POLYGON ((45 23, 48 23, 48 27, 45 27, 45 23)))",
       "OVERLAPS(geom, POLYGON ((45 23, 48 23, 48 27, 45 27, 45 23)))",
       "WITHIN(geom, POLYGON ((45 23, 48 23, 48 27, 45 27, 45 23)))",
-      "CONTAINS(geom, POLYGON ((45 23, 48 23, 48 27, 45 27, 45 23)))",
-      "TOUCHES(geom, POLYGON ((45 23, 48 23, 48 27, 45 27, 45 23)))",
-      "EQUALS(geom, POLYGON ((45 23, 48 23, 48 27, 45 27, 45 23)))",
+      //"CONTAINS(geom, POLYGON ((45 23, 48 23, 48 27, 45 27, 45 23)))",
+      //"TOUCHES(geom, POLYGON ((45 23, 48 23, 48 27, 45 27, 45 23)))",
+      //"EQUALS(geom, POLYGON ((45 23, 48 23, 48 27, 45 27, 45 23)))",
       "DISJOINT(geom, POLYGON ((45 23, 48 23, 48 27, 45 27, 45 23)))",
       "CROSSES(geom, POLYGON ((45 23, 48 23, 48 27, 45 27, 45 23)))"
     )
