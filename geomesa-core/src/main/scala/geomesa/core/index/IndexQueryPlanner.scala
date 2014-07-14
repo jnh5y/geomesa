@@ -41,7 +41,7 @@ import geomesa.core.index.IndexQueryPlanner._
 
 case class IndexQueryPlanner(keyPlanner: KeyPlanner,
                              cfPlanner: ColumnFamilyPlanner,
-                             schema:String,
+                             schema: String,
                              featureType: SimpleFeatureType,
                              featureEncoder: SimpleFeatureEncoder) extends Logging {
 
@@ -306,12 +306,12 @@ case class IndexQueryPlanner(keyPlanner: KeyPlanner,
 
   def stFilters(f: Filter): Boolean = {
     f match {
-      case BBOX => true
-      case Contains =>
-      case Crosses => true
-      case Intersects => true
-      case Overlaps => true
-      case Within => true
+      case _: BBOX => true
+      case _: Contains => true
+      case _: Crosses => true
+      case _: Intersects => true
+      case _: Overlaps => true
+      case _: Within => true
       case _ => false        // Beyond, Disjoint, DWithin, Equals, Touches
     }
   }
@@ -343,7 +343,11 @@ case class IndexQueryPlanner(keyPlanner: KeyPlanner,
     // based on the arguments passed in
     val filter = buildFilter(poly, interval)
 
-    val opoly = IndexSchema.somewhere(poly)
+    val opoly: Option[Filter] = geomFilters match {  // JNH: This is a Hack.
+      case Nil => None
+      case _ => Some(ff.and(geomFilters))
+    } //IndexSchema.somewhere(poly)
+
     val oint  = IndexSchema.somewhen(interval)
 
     // set up row ranges and regular expression filter
@@ -416,13 +420,13 @@ case class IndexQueryPlanner(keyPlanner: KeyPlanner,
   // 1) the GeoHash-box intersects the query polygon; this is a coarse-grained filter
   // 2) the DateTime intersects the query interval; this is a coarse-grained filter
   def configureIndexIterator(bs: BatchScanner,
-                             poly: Option[Polygon],
+                             filter: Option[Filter],
                              interval: Option[Interval],
                              query: Query,
                              featureType: SimpleFeatureType) {
     val cfg = new IteratorSetting(iteratorPriority_SpatioTemporalIterator,
       "within-" + randomPrintableString(5),classOf[IndexIterator])
-    IndexIterator.setOptions(cfg, schema, poly, interval)
+    IndexIterator.setOptions(cfg, schema, filter, interval)
     configureFeatureType(cfg, featureType)
     configureFeatureEncoding(cfg)
     bs.addScanIterator(cfg)
@@ -432,13 +436,13 @@ case class IndexQueryPlanner(keyPlanner: KeyPlanner,
   // 1) the GeoHash-box intersects the query polygon; this is a coarse-grained filter
   // 2) the DateTime intersects the query interval; this is a coarse-grained filter
   def configureSpatioTemporalIntersectingIterator(bs: BatchScanner,
-                                                  poly: Option[Polygon],
+                                                  filter: Option[Filter],
                                                   interval: Option[Interval],
                                                   featureType: SimpleFeatureType) {
     val cfg = new IteratorSetting(iteratorPriority_SpatioTemporalIterator,
       "within-" + randomPrintableString(5),
       classOf[SpatioTemporalIntersectingIterator])
-    SpatioTemporalIntersectingIterator.setOptions(cfg, schema, poly, interval)
+    SpatioTemporalIntersectingIterator.setOptions(cfg, schema, filter, interval)
     configureFeatureType(cfg, featureType)
     bs.addScanIterator(cfg)
   }
