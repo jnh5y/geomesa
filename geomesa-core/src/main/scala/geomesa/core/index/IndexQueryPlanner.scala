@@ -24,6 +24,7 @@ import org.joda.time.Interval
 import org.opengis.feature.simple.SimpleFeatureType
 import org.opengis.filter._
 import org.opengis.filter.expression.{Literal, PropertyName}
+import org.opengis.filter.spatial._
 
 import scala.collection.JavaConversions._
 import scala.util.Random
@@ -86,7 +87,9 @@ case class IndexQueryPlanner(keyPlanner: KeyPlanner,
         val env = query.getHints.get(BBOX_KEY).asInstanceOf[ReferencedEnvelope]
         val q1 = new Query(featureType.getTypeName, ff.bbox(ff.property(featureType.getGeometryDescriptor.getLocalName), env))
         Iterator(DataUtilities.mixQueries(q1, query, "geomesa.mixed.query"))
-      } else splitQueryOnOrs(query, output)
+      } else {
+        splitQueryOnOrs(query, output)
+      }
 
     queries.flatMap(runQuery(acc, sft, _, isDensity, output))
   }
@@ -285,16 +288,52 @@ case class IndexQueryPlanner(keyPlanner: KeyPlanner,
     CloseableIterator(iter, close)
   }
 
+  def getGeomFilters(filter: Filter): Seq[Filter] = {
+    filter match {
+      case a: And => a.getChildren.filter(_.isInstanceOf[BinarySpatialOperator])
+      case so: BinarySpatialOperator => Seq(so)
+      case _ => Seq[Filter]()
+    }
+  }
+
+  def partitionGeom(filter: Filter): (Seq[Filter], Seq[Filter]) = {
+    filter match {
+      case a: And => a.getChildren.partition(stFilters)
+      case _ => Seq(filter).partition(stFilters)
+    }
+
+  }
+
+  def stFilters(f: Filter): Boolean = {
+    f match {
+      case BBOX => true
+      case Contains =>
+      case Crosses => true
+      case Intersects => true
+      case Overlaps => true
+      case Within => true
+      case _ => false        // Beyond, Disjoint, DWithin, Equals, Touches
+    }
+  }
+
+
+
   def stIdxQuery(acc: AccumuloConnectorCreator,
                  query: Query,
                  rewrittenCQL: Filter,
                  filterVisitor: FilterToAccumulo,
                  output: String => Unit) = {
-    logger.trace(s"Scanning ST index table for feature type ${featureType.getTypeName}")
+
+    output(s"Scanning ST index table for feature type ${featureType.getTypeName}")
     val ecql = Option(ECQL.toCQL(rewrittenCQL))
 
     val spatial = filterVisitor.spatialPredicate
     val temporal = filterVisitor.temporalPredicate
+
+    // TODO: Select only the geometry filters which involve the indexed geometry type.
+    val (geomFilters, otherFilters) = partitionGeom(query.getFilter)
+
+    output(s"The geom filters are $geomFilters.")
 
     // standardize the two key query arguments:  polygon and date-range
     val poly = netPolygon(spatial)
