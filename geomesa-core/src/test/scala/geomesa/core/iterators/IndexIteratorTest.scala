@@ -103,7 +103,8 @@ class IndexIteratorTest extends SpatioTemporalIntersectingIteratorTest {
     //create the Feature Source
     val fs = IITest.setupMockFeatureSource(entries)
 
-    val gf = s"WITHIN(geom, ${polygon.toText})"
+    val gf = s"INTERSECTS(geom, ${polygon.toText})"
+    //val gf = s"WITHIN(geom, ${polygon.toText})"
     val dt: Option[String] = Option(dtFilter).map(int =>
       s"(dtg between '${int.getStart}' AND '${int.getEnd}')"
     )

@@ -104,7 +104,8 @@ class SpatioTemporalIntersectingIteratorTest extends Specification with Logging 
     val c = setupMockAccumuloTable(entries)
     val ds = new AccumuloDataStore(c, TEST_TABLE, new DefaultAuthorizationsProvider, "")
 
-    val gf = s"WITHIN(geom, ${polygon.toText})"
+    val gf = s"INTERSECTS(geom, ${polygon.toText})"
+    //val gf = s"WITHIN(geom, ${polygon.toText})"
     val dt: Option[String] = Option(dtFilter).map(int =>
       s"(dtg between '${int.getStart}' AND '${int.getEnd}')"
     )
@@ -121,7 +122,8 @@ class SpatioTemporalIntersectingIteratorTest extends Specification with Logging 
     runQuery(q, ds)
   }
 
-  def runQuery(q: Query, ds: AccumuloDataStore, doPrint: Boolean = false, label: String = "test") = {
+  /// JNH: !!!!!!$@%$@#%$#@*&%()#@%
+  def runQuery(q: Query, ds: AccumuloDataStore, doPrint: Boolean = true, label: String = "test") = {
     val featureEncoder = SimpleFeatureEncoderFactory.defaultEncoder
     // create the schema, and require de-duplication
     val schema = IndexSchema(TestData.schemaEncoding, TestData.featureType, featureEncoder)
@@ -203,6 +205,7 @@ class SpatioTemporalIntersectingIteratorTest extends Specification with Logging 
     }
   }
 
+  /*
   "Large Mock Accumulo with a meaningful attribute-filter" should {
     "return a partial results-set" in {
       val ecqlFilter = "(not " + DEFAULT_DTG_PROPERTY_NAME +
@@ -303,4 +306,5 @@ class SpatioTemporalIntersectingIteratorTest extends Specification with Logging 
       c.isFailure must be equalTo false
     }
   }
+  */
 }
