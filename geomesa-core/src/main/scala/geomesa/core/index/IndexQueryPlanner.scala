@@ -283,7 +283,7 @@ case class IndexQueryPlanner(keyPlanner: KeyPlanner,
                                       ofilter: Option[Filter],
                                       filterVisitor: FilterToAccumulo,
                                       range: AccRange) {
-    val filterOpt = ofilter.map { f => AttributeIndexFilteringIterator.FILTER_KEY -> ECQL.toCQL(f)}
+    val filterOpt = ofilter.map { f => DEFAULT_FILTER_PROPERTY_NAME -> ECQL.toCQL(f)}
 
     val dtgOpt = Option(filterVisitor.temporalPredicate).map(AttributeIndexFilteringIterator.INTERVAL_KEY -> _.toString)
     val opts = List(filterOpt, dtgOpt).flatten.toMap

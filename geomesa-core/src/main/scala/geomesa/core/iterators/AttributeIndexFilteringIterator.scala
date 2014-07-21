@@ -54,15 +54,14 @@ class AttributeIndexFilteringIterator extends Filter with Logging {
                     options: JMap[String, String],
                     env: IteratorEnvironment) {
     super.init(source, options, env)
-
-    val featureType = DataUtilities.createType("DummyType", options.get(GEOMESA_ITERATORS_SIMPLE_FEATURE_TYPE))
-    featureType.decodeUserData(options, GEOMESA_ITERATORS_SIMPLE_FEATURE_TYPE)
-
     // NB: This is copied code from the STII.  Consider refactoring.
-    if (options.containsKey(DEFAULT_FILTER_PROPERTY_NAME)) {
+    if (options.containsKey(DEFAULT_FILTER_PROPERTY_NAME) && options.containsKey(GEOMESA_ITERATORS_SIMPLE_FEATURE_TYPE)) {
+      val featureType = DataUtilities.createType("DummyType", options.get(GEOMESA_ITERATORS_SIMPLE_FEATURE_TYPE))
+      featureType.decodeUserData(options, GEOMESA_ITERATORS_SIMPLE_FEATURE_TYPE)
+
       val filterString  = options.get(DEFAULT_FILTER_PROPERTY_NAME)
       filter = ECQL.toFilter(filterString)
-
+      println(s"In AIFI with $filter")
       val sfb = new SimpleFeatureBuilder(featureType)
       geomTestSF = sfb.buildFeature("test")
     }
@@ -92,6 +91,5 @@ class AttributeIndexFilteringIterator extends Filter with Logging {
 }
 
 object AttributeIndexFilteringIterator {
-  val FILTER_KEY = "geomesa.filter"
   val INTERVAL_KEY = "geomesa.interval"
 }
