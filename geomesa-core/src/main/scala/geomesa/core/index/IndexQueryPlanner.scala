@@ -166,7 +166,7 @@ case class IndexQueryPlanner(keyPlanner: KeyPlanner,
     }
   }
 
-  def attrIdxQueryEligible(filt: Filter): Boolean = filt match {
+  def attrIdxQueryEligible(filt: Filter): lang.Boolean = filt match {
     case filter: PropertyIsEqualTo =>
       val one = filter.getExpression1
       val two = filter.getExpression2
