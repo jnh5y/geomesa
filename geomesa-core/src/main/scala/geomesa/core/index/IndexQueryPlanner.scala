@@ -170,10 +170,13 @@ case class IndexQueryPlanner(keyPlanner: KeyPlanner,
       val one = filter.getExpression1
       val two = filter.getExpression2
       val prop = (one, two) match {
-        case (p: PropertyName, _) => p.getPropertyName
-        case (_, p: PropertyName) => p.getPropertyName
+        case (p: PropertyName, _) => Some(p.getPropertyName)
+        case (_, p: PropertyName) => Some(p.getPropertyName)
+        case (_, _) =>
+          logger.warn(s"*****JNH $filter ****")
+          None
       }
-      featureType.getDescriptor(prop).isIndexed
+      prop.map(p => featureType.getDescriptor(p).isIndexed).getOrElse(false)
 
     case filter: PropertyIsLike =>
       val prop = filter.getExpression.asInstanceOf[PropertyName].getPropertyName
