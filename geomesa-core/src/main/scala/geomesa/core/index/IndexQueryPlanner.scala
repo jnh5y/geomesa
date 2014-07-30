@@ -71,11 +71,11 @@ case class IndexQueryPlanner(keyPlanner: KeyPlanner,
 
   def netGeom(geom: Geometry): Geometry = geom match {
     case null => null
-    case p if p.covers(IndexSchema.everywhere) =>
-      IndexSchema.everywhere
-    case p if IndexSchema.everywhere.covers(p) => p
-    case _ => geom.intersection(IndexSchema.everywhere).
-      asInstanceOf[Polygon]
+    //case gc: GeometryCollection => netGeom(gc.buffer(0))
+//    case p if p.covers(IndexSchema.everywhere) =>
+//      IndexSchema.everywhere
+//    //case p if IndexSchema.everywhere.covers(p) => p
+    case _ => geom.intersection(IndexSchema.everywhere) //.asInstanceOf[Polygon]
   }
   
   def netInterval(interval: Interval): Interval = interval match {
@@ -356,12 +356,6 @@ case class IndexQueryPlanner(keyPlanner: KeyPlanner,
     val geomsToCover: Seq[Geometry] = tweakedGeoms.flatMap {
       case bbox: BBOX =>
         val bboxPoly = bbox.getExpression2.asInstanceOf[Literal].evaluate(null, classOf[Geometry])
-        def addWayPointsToBBOX(g: Geometry):Geometry = {
-          val gf = g.getFactory
-          val geomArray = g.getCoordinates
-          val correctedGeom = GeometryUtils.addWayPoints(geomArray).toArray
-          gf.createPolygon(correctedGeom)
-        }
 
         println(s"BBOX Poly: $bboxPoly")
         Seq(getInternationalDateLineSafeGeometry(addWayPointsToBBOX(bboxPoly)))
@@ -394,7 +388,8 @@ case class IndexQueryPlanner(keyPlanner: KeyPlanner,
     // figure out which of our various filters we intend to use
     // based on the arguments passed in
 
-    val poly = netPolygon(spatial)
+    //val poly = netPolygon(spatial)
+    val poly = netGeom(collectionToCover)
     val filter = buildFilter(poly, interval)
 
     output(s"GeomsToCover $geomsToCover\nBounding poly: $poly")
@@ -430,7 +425,7 @@ case class IndexQueryPlanner(keyPlanner: KeyPlanner,
     }
 
     if (iteratorConfig.useSFFI) {
-      configureSimpleFeatureFilteringIterator(bs, featureType, ecql, query, poly)
+      configureSimpleFeatureFilteringIterator(bs, featureType, ecql, query, poly.getEnvelope.asInstanceOf[Polygon])
     }
 
     // NB: Since we are (potentially) gluing multiple batch scanner iterators together,
@@ -450,6 +445,13 @@ case class IndexQueryPlanner(keyPlanner: KeyPlanner,
       case _ => filter
     }
   }
+
+//  def addWayPointsToBBOX(g: Geometry):Geometry = {
+//    val gf = g.getFactory
+//    val geomArray = g.getCoordinates
+//    val correctedGeom = GeometryUtils.addWayPoints(geomArray).toArray
+//    gf.createPolygon(correctedGeom)
+//  }
 
   private def visitBinarySpatialOp(op: BinarySpatialOperator): Filter = {
     val e1 = op.getExpression1.asInstanceOf[PropertyName]
