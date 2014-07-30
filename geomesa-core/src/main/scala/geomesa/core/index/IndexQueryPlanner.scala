@@ -374,7 +374,7 @@ case class IndexQueryPlanner(keyPlanner: KeyPlanner,
 
     // NB: This is a GeometryCollection
     val collectionToCover: Geometry = geomsToCover match {
-      case Nil => IndexSchema.everywhere
+      case Nil => null // IndexSchema.everywhere
       //case seq: Seq[Geometry] if seq.size == 1 => seq.head          // Is this line magic?
       case seq: Seq[Geometry] => new GeometryCollection(geomsToCover.toArray, geomsToCover.head.getFactory)
     }
@@ -424,8 +424,10 @@ case class IndexQueryPlanner(keyPlanner: KeyPlanner,
         configureSpatioTemporalIntersectingIterator(bs, ofilter, featureType, isDensity)
     }
 
+    val goodPoly = if(poly == null) null else poly.getEnvelope.asInstanceOf[Polygon]
+
     if (iteratorConfig.useSFFI) {
-      configureSimpleFeatureFilteringIterator(bs, featureType, ecql, query, poly.getEnvelope.asInstanceOf[Polygon])
+      configureSimpleFeatureFilteringIterator(bs, featureType, ecql, query, goodPoly) //.getEnvelope.asInstanceOf[Polygon])
     }
 
     // NB: Since we are (potentially) gluing multiple batch scanner iterators together,

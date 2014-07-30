@@ -31,8 +31,10 @@ class AccumuloFeatureReader(dataStore: AccumuloDataStore,
   private var scanTime = 0L
   private var hitsSeen = 0
 
+  // This is public to expose explainQuery
+  val indexSchema = IndexSchema(indexSchemaFmt, sft, featureEncoder)
+
   private val (iter, planningTime) = profile {
-    val indexSchema = IndexSchema(indexSchemaFmt, sft, featureEncoder)
     indexSchema.query(query, dataStore)
   }
 

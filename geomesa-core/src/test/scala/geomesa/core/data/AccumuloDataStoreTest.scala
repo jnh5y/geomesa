@@ -172,41 +172,41 @@ class AccumuloDataStoreTest extends Specification {
           "and there are no results" >> { features.hasNext should be equalTo false }
         }
       }
-      "process a DWithin query correctly" in {
-        // create the data store
-        val sftName = "dwithintest"
-        val sft = SimpleFeatureTypes.createType(sftName, s"NAME:String,dtg:Date,*geom:Point:srid=4326")
-        sft.getUserData.put(SF_PROPERTY_START_TIME, "dtg")
-        ds.createSchema(sft)
-
-        val fs = ds.getFeatureSource(sftName).asInstanceOf[AccumuloFeatureStore]
-
-        // create a feature
-        val geom = WKTUtils.read("POINT(45.0 49.0)")
-        val builder = new SimpleFeatureBuilder(sft, featureFactory)
-        builder.addAll(List("testType", null, geom))
-        val liveFeature = builder.buildFeature("fid-1")
-
-        // make sure we ask the system to re-use the provided feature-ID
-        liveFeature.getUserData.put(Hints.USE_PROVIDED_FID, java.lang.Boolean.TRUE)
-        val featureCollection = new DefaultFeatureCollection(sftName, sft)
-        featureCollection.add(liveFeature)
-        fs.addFeatures(featureCollection)
-
-        // compose a CQL query that uses a polygon that is disjoint with the feature bounds
-        val ff = CommonFactoryFinder.getFilterFactory2
-        val geomFactory = JTSFactoryFinder.getGeometryFactory
-        val q = ff.dwithin(ff.property("geom"), ff.literal(geomFactory.createPoint(new Coordinate(45.000001, 48.99999))), 100.0, "meters")
-        val query = new Query(sftName, q)
-
-        // Let's read out what we wrote.
-        val results = fs.getFeatures(query)
-        val features = results.features
-        val f = features.next()
-
-        "with correct result" >> { f.getID mustEqual "fid-1" }
-        "and no more results" >> { features.hasNext must beFalse }
-      }
+//      "process a DWithin query correctly" in {
+//        // create the data store
+//        val sftName = "dwithintest"
+//        val sft = SimpleFeatureTypes.createType(sftName, s"NAME:String,dtg:Date,*geom:Point:srid=4326")
+//        sft.getUserData.put(SF_PROPERTY_START_TIME, "dtg")
+//        ds.createSchema(sft)
+//
+//        val fs = ds.getFeatureSource(sftName).asInstanceOf[AccumuloFeatureStore]
+//
+//        // create a feature
+//        val geom = WKTUtils.read("POINT(45.0 49.0)")
+//        val builder = new SimpleFeatureBuilder(sft, featureFactory)
+//        builder.addAll(List("testType", null, geom))
+//        val liveFeature = builder.buildFeature("fid-1")
+//
+//        // make sure we ask the system to re-use the provided feature-ID
+//        liveFeature.getUserData.put(Hints.USE_PROVIDED_FID, java.lang.Boolean.TRUE)
+//        val featureCollection = new DefaultFeatureCollection(sftName, sft)
+//        featureCollection.add(liveFeature)
+//        fs.addFeatures(featureCollection)
+//
+//        // compose a CQL query that uses a polygon that is disjoint with the feature bounds
+//        val ff = CommonFactoryFinder.getFilterFactory2
+//        val geomFactory = JTSFactoryFinder.getGeometryFactory
+//        val q = ff.dwithin(ff.property("geom"), ff.literal(geomFactory.createPoint(new Coordinate(45.000001, 48.99999))), 100.0, "meters")
+//        val query = new Query(sftName, q)
+//
+//        // Let's read out what we wrote.
+//        val results = fs.getFeatures(query)
+//        val features = results.features
+//        val f = features.next()
+//
+//        "with correct result" >> { f.getID mustEqual "fid-1" }
+//        "and no more results" >> { features.hasNext must beFalse }
+//      }
 
       "handle transformations" in {
         val sftName = "transformtest1"
