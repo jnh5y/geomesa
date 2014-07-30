@@ -152,11 +152,11 @@ object IndexSchema extends RegexParsers {
       case _                   => Some(interval)
     }
 
-  def somewhere(poly: Geometry): Option[Polygon] =
+  def somewhere(poly: Geometry): Option[Geometry] =
     poly match {
       case null                 => None
       case p if p == everywhere => None
-      case p: Polygon           => Some(p)
+      case g: Geometry          => Some(g)
       case _                    => None
     }
 
