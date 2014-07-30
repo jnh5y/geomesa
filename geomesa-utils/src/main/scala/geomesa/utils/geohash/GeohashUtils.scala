@@ -626,7 +626,7 @@ object GeohashUtils
       case point: Point => List(GeoHash(point.getX, point.getY, resolutions.maxBitsResolution))
       case gc: GeometryCollection => (0 until gc.getNumGeometries).toList.flatMap { i =>
        decomposeGeometry(gc.getGeometryN(i), maxSize, resolutions, relaxFit)
-      }
+      }.distinct
       case _ =>
         val safeGeom = getInternationalDateLineSafeGeometry(targetGeom)
         decomposeGeometry_(
