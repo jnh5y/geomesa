@@ -637,7 +637,7 @@ case class IndexQueryPlanner(keyPlanner: KeyPlanner,
   def planQuery(bs: BatchScanner, filter: KeyPlanningFilter, output: ExplainerOutputType): BatchScanner = {
     output(s"Planning query/configurating batch scanner: $bs")
     val keyPlan = keyPlanner.getKeyPlan(filter, output)
-    output(s"Got keyplan $keyPlan")
+    output(s"Got keyplan ${keyPlan.toString.take(1000)}")
 
     output("Enumerating column families")
     //val columnFamilies = cfPlanner.getColumnFamiliesToFetch(filter)
