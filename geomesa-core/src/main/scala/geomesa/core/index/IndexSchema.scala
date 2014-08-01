@@ -19,8 +19,7 @@ package geomesa.core.index
 import java.nio.ByteBuffer
 import java.util.Map.Entry
 
-import com.typesafe.scalalogging.slf4j.Logging
-import com.vividsolutions.jts.geom.{Geometry, Point, Polygon}
+import com.vividsolutions.jts.geom.{GeometryCollection, Geometry, Point, Polygon}
 import geomesa.core.data._
 import geomesa.core.index.QueryHints._
 import geomesa.core.iterators._
@@ -28,7 +27,7 @@ import geomesa.core.util._
 import geomesa.utils.geotools.SimpleFeatureTypes
 import geomesa.utils.text.{WKBUtils, WKTUtils}
 import org.apache.accumulo.core.data.{Key, Value}
-import org.geotools.data.{DataUtilities, Query}
+import org.geotools.data.Query
 import org.joda.time.format.DateTimeFormat
 import org.joda.time.{DateTime, DateTimeZone, Interval}
 import org.opengis.feature.simple.{SimpleFeature, SimpleFeatureType}
@@ -152,13 +151,25 @@ object IndexSchema extends RegexParsers {
       case _                   => Some(interval)
     }
 
-  def somewhere(poly: Geometry): Option[Polygon] =
-    poly match {
+  def innerSomewhere(geom: Geometry): Option[Geometry] =
+    geom match {
       case null                 => None
       case p if p == everywhere => None
-      case p: Polygon           => Some(p)
+      case g: Geometry          => Some(g)
       case _                    => None
     }
+
+  def somewhere(geom: Geometry): Option[Geometry] = {
+    geom match {
+      case null => None
+      case gc: GeometryCollection =>
+        val wholeWorld = (0 until gc.getNumGeometries).foldRight(false) {
+          case (i, seenEverywhere) => gc.getGeometryN(i).equals(everywhere) || seenEverywhere
+        }
+        if(wholeWorld) None else Some(gc)
+      case g: Geometry => innerSomewhere(g)
+    }
+  }
 
   val DEFAULT_TIME = new DateTime(0, DateTimeZone.forID("UTC"))
 
