@@ -286,8 +286,6 @@ trait GeoHashPlanner extends Logging {
         // GeoHash endpoints of the entire range (which could encompass many
         // more GeoHashes than we wish, but can only be better than (or equal
         // to) a full-table scan)
-
-        // JNH: Does this work for GeometryCollections?
         val env = geom.getEnvelopeInternal
         val ghLL = GeoHash(env.getMinX, env.getMinY)
         val ghUR = GeoHash(env.getMaxX, env.getMaxY)

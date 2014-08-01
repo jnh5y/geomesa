@@ -1,5 +1,10 @@
 package geomesa.core.filter
 
-class FilterUtils {
+// This trait is the successor to FilterToAccumulo
+trait FilterUtils {
+
+
+
 
 }
+

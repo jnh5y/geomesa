@@ -1,7 +1,14 @@
 package geomesa.core
 
+import com.vividsolutions.jts.geom.{Point, MultiPolygon, Polygon, Geometry}
+import geomesa.core.index._
+import geomesa.utils.geohash.GeohashUtils._
+import geomesa.utils.geotools.GeometryUtils
 import org.geotools.factory.CommonFactoryFinder
+import org.joda.time.Interval
+import org.opengis.feature.simple.SimpleFeatureType
 import org.opengis.filter._
+import org.opengis.filter.expression.{Literal, PropertyName}
 import org.opengis.filter.spatial._
 import org.opengis.filter.temporal.BinaryTemporalOperator
 import scala.collection.JavaConversions._
@@ -111,4 +118,73 @@ package object filter {
   //  Also, this needs to cover 'BETWEEN' with the indexed date field.
   def temporalFilters(f: Filter): Boolean = f.isInstanceOf[BinaryTemporalOperator]
 
+  def buildFilter(geom: Geometry, interval: Interval): KeyPlanningFilter =
+    (IndexSchema.somewhere(geom), IndexSchema.somewhen(interval)) match {
+      case (None, None)       =>    AcceptEverythingFilter
+      case (None, Some(i))    =>
+        if (i.getStart == i.getEnd) DateFilter(i.getStart)
+        else                        DateRangeFilter(i.getStart, i.getEnd)
+      case (Some(p), None)    =>    SpatialFilter(p)
+      case (Some(p), Some(i)) =>
+        if (i.getStart == i.getEnd) SpatialDateFilter(p, i.getStart)
+        else                        SpatialDateRangeFilter(p, i.getStart, i.getEnd)
+    }
+
+  def netPolygon(poly: Polygon): Polygon = poly match {
+    case null => null
+    case p if p.covers(IndexSchema.everywhere) =>
+      IndexSchema.everywhere
+    case p if IndexSchema.everywhere.covers(p) => p
+    case _ => poly.intersection(IndexSchema.everywhere).
+      asInstanceOf[Polygon]
+  }
+
+  def netGeom(geom: Geometry): Geometry = geom match {
+    case null => null
+    case _ => geom.intersection(IndexSchema.everywhere)
+  }
+
+  def netInterval(interval: Interval): Interval = interval match {
+    case null => null
+    case _    => IndexSchema.everywhen.overlap(interval)
+  }
+
+  // TODO try to use wildcard values from the Filter itself
+  // Currently pulling the wildcard values from the filter
+  // leads to inconsistent results...so use % as wildcard
+  val MULTICHAR_WILDCARD = "%"
+  val SINGLE_CHAR_WILDCARD = "_"
+  val NULLBYTE = Array[Byte](0.toByte)
+
+  /* Like queries that can be handled by current reverse index */
+  def likeEligible(filter: PropertyIsLike) = containsNoSingles(filter) && trailingOnlyWildcard(filter)
+
+  /* contains no single character wildcards */
+  def containsNoSingles(filter: PropertyIsLike) =
+    !filter.getLiteral.replace("\\\\", "").replace(s"\\$SINGLE_CHAR_WILDCARD", "").contains(SINGLE_CHAR_WILDCARD)
+
+  def trailingOnlyWildcard(filter: PropertyIsLike) =
+    (filter.getLiteral.endsWith(MULTICHAR_WILDCARD) &&
+      filter.getLiteral.indexOf(MULTICHAR_WILDCARD) == filter.getLiteral.length - MULTICHAR_WILDCARD.length) ||
+      filter.getLiteral.indexOf(MULTICHAR_WILDCARD) == -1
+
+
+  def getDescriptorNameFromFilter(filt: Filter): Option[String] = filt match {
+    case filter: PropertyIsEqualTo =>
+      val one = filter.getExpression1
+      val two = filter.getExpression2
+      (one, two) match {
+        case (p: PropertyName, _) => Some(p.getPropertyName)
+        case (_, p: PropertyName) => Some(p.getPropertyName)
+        case (_, _)               => None
+      }
+
+    case filter: PropertyIsLike =>
+      Some(filter.getExpression.asInstanceOf[PropertyName].getPropertyName)
+  }
+
+  def filterListAsAnd(filters: Seq[Filter]): Option[Filter] = filters match {
+    case Nil => None
+    case _ => Some(ff.and(filters))
+  }
 }

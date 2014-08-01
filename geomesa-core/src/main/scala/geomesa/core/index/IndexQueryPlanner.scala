@@ -22,6 +22,7 @@ import org.geotools.factory.CommonFactoryFinder
 import org.geotools.filter.text.ecql.ECQL
 import org.geotools.geometry.jts.ReferencedEnvelope
 import org.joda.time.Interval
+import org.opengis.feature.`type`.AttributeDescriptor
 import org.opengis.feature.simple.SimpleFeatureType
 import org.opengis.filter._
 import org.opengis.filter.expression.{Literal, PropertyName}
@@ -47,38 +48,6 @@ case class IndexQueryPlanner(keyPlanner: KeyPlanner,
                              schema: String,
                              featureType: SimpleFeatureType,
                              featureEncoder: SimpleFeatureEncoder) extends ExplainingLogging {
-  def buildFilter(geom: Geometry, interval: Interval): KeyPlanningFilter =
-    (IndexSchema.somewhere(geom), IndexSchema.somewhen(interval)) match {
-      case (None, None)       =>    AcceptEverythingFilter
-      case (None, Some(i))    =>
-        if (i.getStart == i.getEnd) DateFilter(i.getStart)
-        else                        DateRangeFilter(i.getStart, i.getEnd)
-      case (Some(p), None)    =>    SpatialFilter(p)
-      case (Some(p), Some(i)) =>
-        if (i.getStart == i.getEnd) SpatialDateFilter(p, i.getStart)
-        else                        SpatialDateRangeFilter(p, i.getStart, i.getEnd)
-    }
-
-
-  def netPolygon(poly: Polygon): Polygon = poly match {
-    case null => null
-    case p if p.covers(IndexSchema.everywhere) =>
-      IndexSchema.everywhere
-    case p if IndexSchema.everywhere.covers(p) => p
-    case _ => poly.intersection(IndexSchema.everywhere).
-      asInstanceOf[Polygon]
-  }
-
-  def netGeom(geom: Geometry): Geometry = geom match {
-    case null => null
-    case _ => geom.intersection(IndexSchema.everywhere)
-  }
-  
-  def netInterval(interval: Interval): Interval = interval match {
-    case null => null
-    case _    => IndexSchema.everywhen.overlap(interval)
-  }
-
   // As a pre-processing step, we examine the query/filter and split it into multiple queries.
   // TODO: Work to make the queries non-overlapping.
   def getIterator(acc: AccumuloConnectorCreator,
@@ -170,41 +139,13 @@ case class IndexQueryPlanner(keyPlanner: KeyPlanner,
     }
   }
 
-  def attrIdxQueryEligible(filt: Filter): Boolean = filt match {
-    case filter: PropertyIsEqualTo =>
-      val one = filter.getExpression1
-      val two = filter.getExpression2
-      val prop = (one, two) match {
-        case (p: PropertyName, _) => Some(p.getPropertyName)
-        case (_, p: PropertyName) => Some(p.getPropertyName)
-        case (_, _)               => None
-      }
-      prop.exists(featureType.getDescriptor(_).isIndexed)
+  def attrIdxQueryEligible(filt: Filter): Boolean =
+    getDescriptorNameFromFilter(filt)
+      .map(featureType.getDescriptor)
+      .forall(_.isIndexed)
 
-    case filter: PropertyIsLike =>
-      val prop = filter.getExpression.asInstanceOf[PropertyName].getPropertyName
-      featureType.getDescriptor(prop).isIndexed
-  }
-
-
-      // TODO try to use wildcard values from the Filter itself
-  // Currently pulling the wildcard values from the filter
-  // leads to inconsistent results...so use % as wildcard
-  val MULTICHAR_WILDCARD = "%"
-  val SINGLE_CHAR_WILDCARD = "_"
-  val NULLBYTE = Array[Byte](0.toByte)
-
-  /* Like queries that can be handled by current reverse index */
-  def likeEligible(filter: PropertyIsLike) = containsNoSingles(filter) && trailingOnlyWildcard(filter)
-
-  /* contains no single character wildcards */
-  def containsNoSingles(filter: PropertyIsLike) =
-    !(filter.getLiteral.replace("\\\\", "").replace(s"\\$SINGLE_CHAR_WILDCARD", "").contains(SINGLE_CHAR_WILDCARD))
-
-  def trailingOnlyWildcard(filter: PropertyIsLike) =
-    (filter.getLiteral.endsWith(MULTICHAR_WILDCARD) &&
-      filter.getLiteral.indexOf(MULTICHAR_WILDCARD) == filter.getLiteral.length - MULTICHAR_WILDCARD.length) ||
-      filter.getLiteral.indexOf(MULTICHAR_WILDCARD) == -1
+  def formatAttrIdxRow(prop: String, lit: String) =
+    new Text(prop.getBytes(StandardCharsets.UTF_8) ++ NULLBYTE ++ lit.getBytes(StandardCharsets.UTF_8))
 
   /**
    * Get an iterator that performs an eligible LIKE query against the Attribute Index Table
@@ -232,9 +173,6 @@ case class IndexQueryPlanner(keyPlanner: KeyPlanner,
 
     attrIdxQuery(acc, derivedQuery, filterVisitor, range, output)
   }
-
-  def formatAttrIdxRow(prop: String, lit: String) =
-    new Text(prop.getBytes(StandardCharsets.UTF_8) ++ NULLBYTE ++ lit.getBytes(StandardCharsets.UTF_8))
 
   /**
    * Get an iterator that performs an EqualTo query against the Attribute Index Table
@@ -313,11 +251,6 @@ case class IndexQueryPlanner(keyPlanner: KeyPlanner,
 
     logger.trace(s"Attribute Scan Range: ${range.toString}")
     scanner.setRange(range)
-  }
-
-  def filterListAsAnd(filters: Seq[Filter]): Option[Filter] = filters match {
-    case Nil => None
-    case _ => Some(ff.and(filters))
   }
 
   def stIdxQuery(acc: AccumuloConnectorCreator,
@@ -434,10 +367,10 @@ case class IndexQueryPlanner(keyPlanner: KeyPlanner,
     filter match {
       case dw: DWithin    => rewriteDwithin(dw)
       case op: BBOX       => visitBBOX(op)
-      case op: Within     => visitBinarySpatialOp(op)
-      case op: Intersects => visitBinarySpatialOp(op)
-      case op: Overlaps   => visitBinarySpatialOp(op)
-
+//      case op: Within     => visitBinarySpatialOp(op)
+//      case op: Intersects => visitBinarySpatialOp(op)
+//      case op: Overlaps   => visitBinarySpatialOp(op)
+      case op: BinarySpatialOperator   => visitBinarySpatialOp(op)
       case _ => filter
     }
   }
@@ -616,7 +549,7 @@ case class IndexQueryPlanner(keyPlanner: KeyPlanner,
       case _ => Seq(new org.apache.accumulo.core.data.Range())
     }
     bs.setRanges(accRanges)
-    output(s"Set ${accRanges.size} ranges.")
+    output(s"Setting ${accRanges.size} ranges.")
 
     // always try to set a RowID regular expression
     //@TODO this is broken/disabled as a result of the KeyTier
