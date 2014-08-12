@@ -74,12 +74,14 @@ object KNNQuery {
         val newFeatures = source.getFeatures(newQuery).features
 
         // insert the SimpleFeature and its distance into sfPQ
-        newFeatures.foreach { sf => sfPQ.enqueue( SimpleFeatureWithDistance(sf,sfPQ.distance(sf)) ) }
+        newFeatures.foreach { sf =>
+          log.debug(s"Enqueuing feature with ID: ${sf.getID}")
+          sfPQ.enqueue( SimpleFeatureWithDistance(sf,sfPQ.distance(sf)) ) }
 
         // apply filter to ghPQ if we've found k neighbors
         if (sfPQ.isFull) sfPQ.maxDistance.foreach { x => ghPQ.mutateFilterDistance(x)}
         log.debug (
-          s"KNN Status: Completed subQuery: (hash,distance, PQ size) = $newGH.hash, $sfPQ.maxDistance.getOrElse(0.0), $sfPQ.size ")
+          s"KNN Status: Completed subQuery: (hash,distance, PQ size) = ${newGH.hash}, ${sfPQ.maxDistance.getOrElse(0.0)}, ${sfPQ.size} ")
         runKNNQuery(source, query, ghPQ, sfPQ)
     }
   }
