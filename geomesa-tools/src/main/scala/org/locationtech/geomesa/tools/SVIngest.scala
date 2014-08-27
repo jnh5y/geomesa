@@ -19,7 +19,7 @@ import java.net.URLDecoder
 import java.nio.charset.Charset
 
 import com.google.common.hash.Hashing
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.Logging
 import com.vividsolutions.jts.geom.Coordinate
 import org.apache.commons.csv.{CSVFormat, CSVParser}
 import org.geotools.data.{DataStoreFinder, FeatureWriter, Transaction}

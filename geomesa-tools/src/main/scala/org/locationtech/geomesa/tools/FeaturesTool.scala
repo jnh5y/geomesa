@@ -18,7 +18,7 @@ package org.locationtech.geomesa.tools
 
 import java.io.{File, FileOutputStream}
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.Logging
 import org.geotools.data._
 import org.geotools.data.simple.SimpleFeatureCollection
 import org.geotools.filter.text.cql2.CQL

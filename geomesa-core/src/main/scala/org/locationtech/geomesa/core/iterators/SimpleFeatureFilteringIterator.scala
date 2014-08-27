@@ -16,7 +16,7 @@
 
 package org.locationtech.geomesa.core.iterators
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.Logging
 import org.apache.accumulo.core.client.IteratorSetting
 import org.apache.accumulo.core.data._
 import org.apache.accumulo.core.iterators.{IteratorEnvironment, SortedKeyValueIterator}

@@ -72,6 +72,9 @@
     <scala.short>2.11</scala.short>
     </properties>
 
+
+
+
     <profiles>
         <profile>
             <id>debug-tests</id>
@@ -590,22 +593,11 @@
                         <jvmArg>-Xmx4096m</jvmArg>
                         <jvmArg>-XX:MaxPermSize=1024m</jvmArg>
                     </jvmArgs>
-                <compilerPlugins>
-                    <compilerPlugin>
-                        <groupId>org.scoverage</groupId>
-                        <artifactId>scalac-scoverage-plugin_${scala.short}</artifactId>
-                        <version>${scoverage-plugin.version}</version>
-                    </compilerPlugin>
-                </compilerPlugins>
-           <args>
-                    <arg>-g:vars</arg>
-                    <arg>-P:scoverage:dataDir:${project.build.outputDirectory}</arg>
-                </args>
-                   <!-- <args>
+                    <args>
                         <arg>-nowarn</arg>
                         <arg>-unchecked</arg>
                         <arg>-deprecation</arg>
-                    </args> -->
+                    </args> 
                     <scalaVersion>${scala.version}</scalaVersion>
                 </configuration>
             </plugin>
@@ -630,6 +622,11 @@
                     <autoVersionSubmodules>true</autoVersionSubmodules>
                 </configuration>
             </plugin>
+    <plugin>
+        <groupId>org.scoverage</groupId>
+        <artifactId>maven-scoverage-plugin</artifactId>
+        <version>${maven.plugin.scoverage.version}</version>
+    </plugin>
         </plugins>
     </build>
 

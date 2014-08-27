@@ -16,7 +16,7 @@
 
 package org.locationtech.geomesa.core.data.mapreduce
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.Logging
 import org.apache.accumulo.core.data.{Key, Value}
 import org.apache.hadoop.io.{LongWritable, Text}
 import org.apache.hadoop.mapreduce.{Mapper => HMapper}

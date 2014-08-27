@@ -23,7 +23,7 @@ import java.util.concurrent.{ScheduledThreadPoolExecutor, TimeUnit}
 
 import com.google.common.collect.Queues
 import com.google.common.util.concurrent.MoreExecutors
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.Logging
 import org.apache.accumulo.core.client.admin.TimeType
 import org.apache.accumulo.core.client.mock.MockConnector
 import org.apache.accumulo.core.client.{BatchWriterConfig, Connector}

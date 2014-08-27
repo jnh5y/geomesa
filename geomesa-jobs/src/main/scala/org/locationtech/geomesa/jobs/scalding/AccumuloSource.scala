@@ -22,7 +22,7 @@ import cascading.scheme.{SinkCall, SourceCall}
 import cascading.tap.hadoop.io.HadoopTupleEntrySchemeIterator
 import cascading.tuple._
 import com.twitter.scalding._
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.Logging
 import org.apache.accumulo.core.client.mapred.{AccumuloInputFormat, AccumuloOutputFormat, InputFormatBase}
 import org.apache.accumulo.core.client.mapreduce.lib.util.ConfiguratorBase
 import org.apache.accumulo.core.client.security.tokens.PasswordToken

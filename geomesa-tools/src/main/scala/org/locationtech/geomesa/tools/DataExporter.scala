@@ -22,7 +22,7 @@ import java.io.{File, FileWriter, PrintWriter}
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.Logging
 import com.vividsolutions.jts.geom.Coordinate
 import org.apache.commons.lang.StringEscapeUtils
 import org.geotools.data._

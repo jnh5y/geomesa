@@ -1,6 +1,6 @@
 package org.locationtech.geomesa.core.filter
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.Logging
 import org.geotools.filter.text.ecql.ECQL
 import org.junit.runner.RunWith
 import org.locationtech.geomesa.core.filter.FilterUtils._

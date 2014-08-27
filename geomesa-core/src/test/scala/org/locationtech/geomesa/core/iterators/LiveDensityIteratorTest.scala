@@ -21,7 +21,7 @@ package org.locationtech.geomesa.core.iterators
 import java.text.DecimalFormat
 
 import com.google.common.collect.HashBasedTable
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.Logging
 import com.vividsolutions.jts.geom.Envelope
 import org.geotools.data._
 import org.geotools.data.simple.SimpleFeatureIterator

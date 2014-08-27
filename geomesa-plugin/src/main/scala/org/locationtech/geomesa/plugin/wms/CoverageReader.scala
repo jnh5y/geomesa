@@ -20,7 +20,7 @@ import java.awt.image.BufferedImage
 import java.awt.{AlphaComposite, Color, Graphics2D, Rectangle}
 import java.util.{Date, List => JList}
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.Logging
 import org.apache.accumulo.core.client.security.tokens.PasswordToken
 import org.apache.accumulo.core.client.{IteratorSetting, Scanner, ZooKeeperInstance}
 import org.apache.accumulo.core.iterators.user.VersioningIterator

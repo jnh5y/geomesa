@@ -19,7 +19,7 @@ package org.locationtech.geomesa.tools
 import java.util.Map.Entry
 import java.util.UUID
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.Logging
 import org.apache.accumulo.core.client.impl.thrift.ThriftTableOperationException
 import org.apache.accumulo.core.client.{TableNotFoundException, ZooKeeperInstance}
 import org.apache.hadoop.fs.Path

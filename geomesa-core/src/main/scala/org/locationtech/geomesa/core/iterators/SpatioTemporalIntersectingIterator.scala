@@ -19,7 +19,7 @@ package org.locationtech.geomesa.core.iterators
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, DataInputStream, DataOutputStream}
 import java.util.{Date, HashSet => JHashSet}
 
-import com.typesafe.scalalogging.slf4j.{Logger, Logging}
+import com.typesafe.scalalogging.{Logger, Logging}
 import com.vividsolutions.jts.geom._
 import org.apache.accumulo.core.client.IteratorSetting
 import org.apache.accumulo.core.data.{ArrayByteSequence, ByteSequence, Key, Range, Value}

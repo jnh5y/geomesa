@@ -16,7 +16,7 @@
 
 package org.locationtech.geomesa.tools
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.Logging
 
 class Ingest extends Logging with AccumuloProperties {
 

@@ -20,7 +20,7 @@ package org.locationtech.geomesa.core.data
 import java.util.{Map => JMap}
 
 import com.google.common.collect.ImmutableSortedSet
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.Logging
 import org.apache.accumulo.core.client._
 import org.apache.accumulo.core.client.admin.TimeType
 import org.apache.accumulo.core.client.mock.MockConnector

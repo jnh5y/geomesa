@@ -19,7 +19,7 @@ package org.locationtech.geomesa.core.index
 import java.nio.charset.StandardCharsets
 import java.util.Map.Entry
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.Logging
 import org.apache.accumulo.core.client.{IteratorSetting, Scanner}
 import org.apache.accumulo.core.data.{Key, Value, Range => AccRange}
 import org.apache.hadoop.io.Text

@@ -2,7 +2,7 @@ package org.locationtech.geomesa.core.filter
 
 import java.util.Date
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.Logging
 import com.vividsolutions.jts.geom.Coordinate
 import org.geotools.data.DataStoreFinder
 import org.geotools.data.simple.{SimpleFeatureSource, SimpleFeatureStore}

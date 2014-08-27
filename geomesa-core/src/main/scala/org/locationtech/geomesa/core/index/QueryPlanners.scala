@@ -16,7 +16,7 @@
 
 package org.locationtech.geomesa.core.index
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.Logging
 import com.vividsolutions.jts.geom.Geometry
 import org.apache.accumulo.core.client.IteratorSetting
 import org.apache.hadoop.io.Text

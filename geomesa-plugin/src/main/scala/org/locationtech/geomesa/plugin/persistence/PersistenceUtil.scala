@@ -19,7 +19,7 @@ package org.locationtech.geomesa.plugin.persistence
 import java.io.{File, FileInputStream, FileOutputStream}
 import java.util.Properties
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.Logging
 import org.vfny.geoserver.global.GeoserverDataDirectory
 
 /**

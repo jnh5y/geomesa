@@ -17,7 +17,7 @@
 package org.locationtech.geomesa.utils.geohash
 
 import com.spatial4j.core.context.jts.JtsSpatialContext
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.Logging
 import com.vividsolutions.jts.geom._
 import org.locationtech.geomesa.utils.CartesianProductIterable
 import org.locationtech.geomesa.utils.text.WKTUtils

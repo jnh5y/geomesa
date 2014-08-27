@@ -1,6 +1,6 @@
 package org.locationtech.geomesa.core.data
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.Logging
 import org.apache.accumulo.core.client.{BatchScanner, Scanner}
 import org.opengis.feature.simple.SimpleFeatureType
 

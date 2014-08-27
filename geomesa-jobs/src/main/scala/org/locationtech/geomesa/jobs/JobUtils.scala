@@ -19,7 +19,7 @@ package org.locationtech.geomesa.jobs
 import java.io.{File, FileFilter, FilenameFilter}
 import java.net.{URLClassLoader, URLDecoder}
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.Logging
 import org.apache.accumulo.core.client.Connector
 import org.apache.commons.vfs2.impl.VFSClassLoader
 import org.apache.hadoop.conf.Configuration

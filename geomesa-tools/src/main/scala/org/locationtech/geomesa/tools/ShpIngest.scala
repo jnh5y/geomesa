@@ -2,7 +2,7 @@ package org.locationtech.geomesa.tools
 
 import java.io.File
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.Logging
 import org.geotools.data.shapefile.ShapefileDataStoreFactory
 import org.geotools.data.{DataStoreFinder, Transaction}
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder

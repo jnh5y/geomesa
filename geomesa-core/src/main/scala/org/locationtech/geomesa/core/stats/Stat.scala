@@ -18,7 +18,7 @@ package org.locationtech.geomesa.core.stats
 
 import java.util.Map.Entry
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.Logging
 import org.apache.accumulo.core.client.Scanner
 import org.apache.accumulo.core.data.{Key, Mutation, Value}
 import org.joda.time.format.DateTimeFormat

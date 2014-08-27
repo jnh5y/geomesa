@@ -16,7 +16,7 @@
 
 package org.locationtech.geomesa.core.iterators
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.Logging
 import org.apache.accumulo.core.client.mock.MockInstance
 import org.apache.accumulo.core.client.security.tokens.PasswordToken
 import org.apache.accumulo.core.client.{BatchWriterConfig, Connector, IteratorSetting}

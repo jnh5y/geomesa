@@ -16,7 +16,7 @@
 
 package org.locationtech.geomesa.core
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.Logging
 import org.apache.accumulo.core.data.{Key, Value}
 import org.geotools.factory.Hints.{ClassKey, IntegerKey}
 import org.geotools.filter.identity.FeatureIdImpl

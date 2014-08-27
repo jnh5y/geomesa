@@ -16,7 +16,7 @@
 
 package org.locationtech.geomesa.utils.geohash
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.Logging
 import com.vividsolutions.jts.geom._
 import org.junit.Ignore
 import org.junit.runner.RunWith

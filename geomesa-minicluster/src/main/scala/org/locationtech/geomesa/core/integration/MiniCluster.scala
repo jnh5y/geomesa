@@ -21,7 +21,7 @@ package org.locationtech.geomesa.core.integration
 import java.io._
 
 import com.google.common.io.Files
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.Logging
 import org.apache.accumulo.core.client.security.tokens.PasswordToken
 import org.apache.accumulo.core.client.{Connector, ZooKeeperInstance}
 import org.apache.accumulo.minicluster.MiniAccumuloCluster

@@ -18,7 +18,7 @@
 
 package org.locationtech.geomesa.core.integration.data
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.Logging
 import org.geotools.data.Transaction
 import org.geotools.factory.Hints
 import org.geotools.filter.identity.FeatureIdImpl

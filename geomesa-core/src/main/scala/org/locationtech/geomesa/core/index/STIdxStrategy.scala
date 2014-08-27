@@ -18,7 +18,7 @@ package org.locationtech.geomesa.core.index
 
 import java.util.Map.Entry
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.Logging
 import com.vividsolutions.jts.geom.{Polygon, GeometryCollection, Geometry}
 import org.apache.accumulo.core.client.IteratorSetting
 import org.apache.accumulo.core.data.{Value, Key}

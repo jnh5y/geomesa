@@ -15,7 +15,7 @@
  */
 package org.locationtech.geomesa.tools
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.Logging
 
 object Tools extends App with Logging with GetPassword {
   val parser = new scopt.OptionParser[ScoptArguments]("geomesa-tools") {

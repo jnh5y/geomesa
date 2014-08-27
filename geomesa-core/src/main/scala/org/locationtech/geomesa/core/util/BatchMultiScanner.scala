@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.{Executors, TimeUnit}
 
 import com.google.common.collect.Queues
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.Logging
 import org.apache.accumulo.core.client.{BatchScanner, Scanner}
 import org.apache.accumulo.core.data.{Key, Value, Range => AccRange}
 
