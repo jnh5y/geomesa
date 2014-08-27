@@ -16,7 +16,7 @@
 
 package org.locationtech.geomesa.core.index
 
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import com.vividsolutions.jts.geom.Geometry
 import org.apache.accumulo.core.client.IteratorSetting
 import org.apache.hadoop.io.Text
@@ -275,7 +275,7 @@ trait ColumnFamilyPlanner {
   def getColumnFamiliesToFetch(filter: KeyPlanningFilter): KeyPlan
 }
 
-trait GeoHashPlanner extends Logging {
+trait GeoHashPlanner extends LazyLogging {
   def geomToGeoHashes(geom: Geometry, offset: Int, bits: Int): Seq[String] =
     GeohashUtils.getUniqueGeohashSubstringsInPolygon(geom, offset, bits, MAX_KEYS_IN_LIST)
 

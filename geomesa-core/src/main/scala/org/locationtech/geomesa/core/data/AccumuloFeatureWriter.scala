@@ -19,7 +19,7 @@ package org.locationtech.geomesa.core.data
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import org.apache.accumulo.core.client.{BatchWriter, BatchWriterConfig, Connector}
 import org.apache.accumulo.core.data.{Key, Mutation, PartialKey, Value, Range => ARange}
 import org.apache.accumulo.core.security.ColumnVisibility
@@ -103,7 +103,7 @@ abstract class AccumuloFeatureWriter(featureType: SimpleFeatureType,
                                      ds: AccumuloDataStore,
                                      visibility: String)
   extends SimpleFeatureWriter
-          with Logging {
+          with LazyLogging {
 
   import org.locationtech.geomesa.core.data.AccumuloFeatureWriter._
 

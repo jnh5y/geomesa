@@ -22,7 +22,7 @@ import java.io.{File, FileWriter, PrintWriter}
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import com.vividsolutions.jts.geom.Coordinate
 import org.apache.commons.lang.StringEscapeUtils
 import org.geotools.data._
@@ -36,7 +36,7 @@ import org.locationtech.geomesa.utils.geotools.Conversions._
 import scala.collection.JavaConversions._
 import scala.util.Try
 
-object DataExporter extends App with Logging {
+object DataExporter extends App with LazyLogging {
 
   // replace this with your load specification
   val load: LoadAttributes = null
@@ -54,7 +54,7 @@ object DataExporter extends App with Logging {
   extractor.writeFeatures(features)
 }
 
-class DataExporter(load: LoadAttributes, params: Map[_,_]) extends Logging {
+class DataExporter(load: LoadAttributes, params: Map[_,_]) extends LazyLogging {
 
   lazy val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
 

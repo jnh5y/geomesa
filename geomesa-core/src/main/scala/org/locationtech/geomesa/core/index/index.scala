@@ -16,7 +16,7 @@
 
 package org.locationtech.geomesa.core
 
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import org.apache.accumulo.core.data.{Key, Value}
 import org.geotools.factory.Hints.{ClassKey, IntegerKey}
 import org.geotools.filter.identity.FeatureIdImpl
@@ -60,7 +60,7 @@ package object index {
     override def apply(v1: => String): Unit = println(v1)
   }
 
-  trait ExplainingLogging extends Logging {
+  trait ExplainingLazyLogging extends LazyLogging {
     def log(stringFnx: => String) = {
       lazy val s: String = stringFnx
       logger.trace(s)

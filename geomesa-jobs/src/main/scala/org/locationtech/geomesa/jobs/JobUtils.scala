@@ -19,7 +19,7 @@ package org.locationtech.geomesa.jobs
 import java.io.{File, FileFilter, FilenameFilter}
 import java.net.{URLClassLoader, URLDecoder}
 
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import org.apache.accumulo.core.client.Connector
 import org.apache.commons.vfs2.impl.VFSClassLoader
 import org.apache.hadoop.conf.Configuration
@@ -28,7 +28,7 @@ import org.locationtech.geomesa.core.data.AccumuloDataStore
 import scala.io.Source
 import scala.util.Try
 
-object JobUtils extends Logging {
+object JobUtils extends LazyLogging {
 
   // default jars that will be included with m/r jobs
   lazy val defaultLibJars = {

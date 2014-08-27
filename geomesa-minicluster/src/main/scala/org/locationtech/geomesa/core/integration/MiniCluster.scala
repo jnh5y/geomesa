@@ -21,7 +21,7 @@ package org.locationtech.geomesa.core.integration
 import java.io._
 
 import com.google.common.io.Files
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import org.apache.accumulo.core.client.security.tokens.PasswordToken
 import org.apache.accumulo.core.client.{Connector, ZooKeeperInstance}
 import org.apache.accumulo.minicluster.MiniAccumuloCluster
@@ -35,7 +35,7 @@ import scala.collection.JavaConverters._
 import scala.io.Source
 import scala.util.{Failure, Success, Try}
 
-object MiniCluster extends App with Logging {
+object MiniCluster extends App with LazyLogging {
 
   val options = new Options()
   options.addOption({
@@ -93,7 +93,7 @@ object MiniCluster extends App with Logging {
  * @param dataType type of data contained in this instance
  * @param zooPort port the instance will be available on
  */
-class MiniCluster(val dataType: DataType, val zooPort: String) extends Logging {
+class MiniCluster(val dataType: DataType, val zooPort: String) extends LazyLogging {
 
   val localhostPrefix = "localhost:"
 

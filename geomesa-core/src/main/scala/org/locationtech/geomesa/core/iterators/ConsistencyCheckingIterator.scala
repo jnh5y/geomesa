@@ -17,7 +17,7 @@
 
 package org.locationtech.geomesa.core.iterators
 
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import org.apache.accumulo.core.data._
 import org.apache.accumulo.core.iterators.{IteratorEnvironment, SortedKeyValueIterator}
 import org.apache.hadoop.io.Text
@@ -25,7 +25,7 @@ import org.locationtech.geomesa.core.index.IndexSchema
 
 class ConsistencyCheckingIterator
   extends SortedKeyValueIterator[Key, Value]
-          with Logging {
+          with LazyLogging {
 
   import scala.collection.JavaConverters._
 

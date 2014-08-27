@@ -19,7 +19,7 @@ package org.locationtech.geomesa.core.iterators
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, DataInputStream, DataOutputStream}
 import java.util.{Date, HashSet => JHashSet}
 
-import com.typesafe.scalalogging.{Logger, Logging}
+import com.typesafe.scalalogging.slf4j.{Logger, LazyLogging}
 import com.vividsolutions.jts.geom._
 import org.apache.accumulo.core.client.IteratorSetting
 import org.apache.accumulo.core.data.{ArrayByteSequence, ByteSequence, Key, Range, Value}
@@ -58,7 +58,7 @@ case class Attribute(name: Text, value: Text)
  */
 class SpatioTemporalIntersectingIterator
   extends SortedKeyValueIterator[Key, Value]
-  with Logging {
+  with LazyLogging {
 
 
   protected var indexSource: SortedKeyValueIterator[Key, Value] = null

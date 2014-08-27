@@ -16,7 +16,7 @@
 
 package org.locationtech.geomesa.core.index
 
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import org.locationtech.geomesa.core.index
 import org.opengis.feature.simple.SimpleFeatureType
 
@@ -31,7 +31,7 @@ import scala.collection.JavaConverters._
  * This is useful since the only symptom of this mistake is slower than normal queries on temporal ranges.
  */
 
-object TemporalIndexCheck extends Logging {
+object TemporalIndexCheck extends LazyLogging {
   def extractNewDTGFieldCandidate(sft: SimpleFeatureType): Option[String] = {
     //if the attribute is not actually present, look for one
     if (!index.getDtgDescriptor(sft).isDefined) {

@@ -1,6 +1,6 @@
 package org.locationtech.geomesa.core.filter
 
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import org.geotools.filter.text.ecql.ECQL
 import org.junit.runner.RunWith
 import org.locationtech.geomesa.core.filter.FilterUtils._
@@ -14,7 +14,7 @@ import org.specs2.specification.Fragments
 import scala.collection.JavaConversions._
 
 @RunWith(classOf[JUnitRunner])
-class FilterPackageObjectTest extends Specification with Logging {
+class FilterPackageObjectTest extends Specification with LazyLogging {
 
   "The deMorgan function" should {
 

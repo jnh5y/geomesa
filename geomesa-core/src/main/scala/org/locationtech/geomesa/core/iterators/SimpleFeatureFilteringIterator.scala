@@ -16,7 +16,7 @@
 
 package org.locationtech.geomesa.core.iterators
 
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import org.apache.accumulo.core.client.IteratorSetting
 import org.apache.accumulo.core.data._
 import org.apache.accumulo.core.iterators.{IteratorEnvironment, SortedKeyValueIterator}
@@ -31,7 +31,7 @@ import scala.util.{Failure, Success, Try}
 
 class SimpleFeatureFilteringIterator(other: SimpleFeatureFilteringIterator, env: IteratorEnvironment)
   extends SortedKeyValueIterator[Key, Value]
-  with Logging {
+  with LazyLogging {
 
   import org.locationtech.geomesa.core._
 

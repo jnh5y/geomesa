@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.{Executors, TimeUnit}
 
 import com.google.common.collect.Queues
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import org.apache.accumulo.core.client.{BatchScanner, Scanner}
 import org.apache.accumulo.core.data.{Key, Value, Range => AccRange}
 
@@ -30,7 +30,7 @@ class BatchMultiScanner(in: Scanner,
                         out: BatchScanner,
                         joinFn: java.util.Map.Entry[Key, Value] => AccRange,
                         batchSize: Int = 32768)
-  extends Iterable[java.util.Map.Entry[Key, Value]] with AutoCloseable with Logging {
+  extends Iterable[java.util.Map.Entry[Key, Value]] with AutoCloseable with LazyLogging {
 
   if(batchSize < 1) {
     throw new IllegalArgumentException(f"Illegal batchSize($batchSize%d). Value must be > 0")

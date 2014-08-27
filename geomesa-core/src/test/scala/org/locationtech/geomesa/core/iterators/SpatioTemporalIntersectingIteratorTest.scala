@@ -16,7 +16,7 @@
 
 package org.locationtech.geomesa.core.iterators
 
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import org.apache.accumulo.core.client.mock.MockInstance
 import org.apache.accumulo.core.client.security.tokens.PasswordToken
 import org.apache.accumulo.core.client.{BatchWriterConfig, Connector, IteratorSetting}
@@ -38,7 +38,7 @@ object UnitTestEntryType  {
 }
 
 @RunWith(classOf[JUnitRunner])
-class SpatioTemporalIntersectingIteratorTest extends Specification with Logging {
+class SpatioTemporalIntersectingIteratorTest extends Specification with LazyLogging {
 
   sequential
 

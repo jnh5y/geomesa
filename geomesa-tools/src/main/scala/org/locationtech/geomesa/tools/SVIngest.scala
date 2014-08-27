@@ -19,7 +19,7 @@ import java.net.URLDecoder
 import java.nio.charset.Charset
 
 import com.google.common.hash.Hashing
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import com.vividsolutions.jts.geom.Coordinate
 import org.apache.commons.csv.{CSVFormat, CSVParser}
 import org.geotools.data.{DataStoreFinder, FeatureWriter, Transaction}
@@ -37,7 +37,7 @@ import org.opengis.feature.simple.{SimpleFeature, SimpleFeatureType}
 import scala.io.Source
 import scala.util.{Failure, Success, Try}
 
-class SVIngest(config: IngestArguments, dsConfig: Map[String, _]) extends Logging {
+class SVIngest(config: IngestArguments, dsConfig: Map[String, _]) extends LazyLogging {
 
   import scala.collection.JavaConversions._
 

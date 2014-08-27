@@ -22,7 +22,7 @@ import cascading.scheme.{SinkCall, SourceCall}
 import cascading.tap.hadoop.io.HadoopTupleEntrySchemeIterator
 import cascading.tuple._
 import com.twitter.scalding._
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import org.apache.accumulo.core.client.mapred.{AccumuloInputFormat, AccumuloOutputFormat, InputFormatBase}
 import org.apache.accumulo.core.client.mapreduce.lib.util.ConfiguratorBase
 import org.apache.accumulo.core.client.security.tokens.PasswordToken
@@ -84,7 +84,7 @@ case class AccumuloSource(options: AccumuloSourceOptions) extends Source with Ma
  * @param readOrWrite
  * @param scheme
  */
-class AccumuloTap(readOrWrite: AccessMode, scheme: AccumuloScheme) extends AccTap(scheme) with Logging {
+class AccumuloTap(readOrWrite: AccessMode, scheme: AccumuloScheme) extends AccTap(scheme) with LazyLogging {
 
   val options = scheme.options
 

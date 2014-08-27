@@ -54,7 +54,7 @@
         <!-- 1.7.x is for hadoop 2 and accumulo 1.5.x -->
         <slf4j.version>1.7.5</slf4j.version>
         <logback.version>1.1.1</logback.version>
-        <scala-logging.version>2.1.2</scala-logging.version>
+        <scala-logging.version>2.1.1</scala-logging.version>
 
         <!-- distribution properties -->
         <dist.accumulo.lib.ext>accumulo/lib/ext</dist.accumulo.lib.ext>
@@ -71,9 +71,46 @@
     <maven.plugin.scoverage.version>0.99.2</maven.plugin.scoverage.version>
     <scala.short>2.11</scala.short>
     </properties>
-
-
-
+<!--
+<plugin>
+    <groupId>net.alchim31.maven</groupId>
+    <artifactId>scala-maven-plugin</artifactId>
+    <version>${scoverage-plugin.version}</version>
+    <executions>
+        <execution>
+            <id>compile</id>
+            <goals>
+                <goal>add-source</goal>
+                <goal>compile</goal>
+            </goals>
+            <configuration>
+                <jvmArgs>
+                    <jvmArg>-Xms64m</jvmArg>
+                    <jvmArg>-Xmx1024m</jvmArg>
+                </jvmArgs>
+                <compilerPlugins>
+                    <compilerPlugin>
+                        <groupId>org.scoverage</groupId>
+                        <artifactId>scalac-scoverage-plugin_${scala.short}</artifactId>
+                        <version>${scoverage-plugin.version}</version>
+                    </compilerPlugin>
+                </compilerPlugins>
+                <args>
+                    <arg>-g:vars</arg>
+                    <arg>-P:scoverage:dataDir:${project.build.outputDirectory}</arg>
+                </args>
+            </configuration>
+        </execution>
+        <execution>
+            <id>test</id>
+            <goals>
+                <goal>add-source</goal>
+                <goal>testCompile</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>   
+-->
 
     <profiles>
         <profile>
@@ -521,6 +558,11 @@
     </dependencyManagement>
 
     <dependencies>
+<dependency>
+    <groupId>org.scoverage</groupId>
+    <artifactId>scalac-scoverage-plugin_${scala.short}</artifactId>
+    <version>${scoverage-plugin.version}</version>
+</dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
@@ -593,11 +635,22 @@
                         <jvmArg>-Xmx4096m</jvmArg>
                         <jvmArg>-XX:MaxPermSize=1024m</jvmArg>
                     </jvmArgs>
-                    <args>
+                <compilerPlugins>
+                    <compilerPlugin>
+                        <groupId>org.scoverage</groupId>
+                        <artifactId>scalac-scoverage-plugin_${scala.short}</artifactId>
+                        <version>${scoverage-plugin.version}</version>
+                    </compilerPlugin>
+                </compilerPlugins>
+                <args>
+                    <arg>-g:vars</arg>
+                    <arg>-P:scoverage:dataDir:${project.build.outputDirectory}</arg>
+                </args>
+                <!--    <args>
                         <arg>-nowarn</arg>
                         <arg>-unchecked</arg>
                         <arg>-deprecation</arg>
-                    </args> 
+                    </args> -->
                     <scalaVersion>${scala.version}</scalaVersion>
                 </configuration>
             </plugin>

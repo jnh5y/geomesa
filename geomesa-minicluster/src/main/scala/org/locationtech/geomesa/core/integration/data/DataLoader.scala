@@ -18,14 +18,14 @@
 
 package org.locationtech.geomesa.core.integration.data
 
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import org.geotools.data.Transaction
 import org.geotools.factory.Hints
 import org.geotools.filter.identity.FeatureIdImpl
 import org.locationtech.geomesa.core.data.AccumuloDataStore
 import org.locationtech.geomesa.feature.AvroSimpleFeatureFactory
 
-class DataLoader(dataType: DataType) extends Logging {
+class DataLoader(dataType: DataType) extends LazyLogging {
 
   /**
    *

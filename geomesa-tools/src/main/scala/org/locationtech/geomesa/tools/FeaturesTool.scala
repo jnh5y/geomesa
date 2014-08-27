@@ -18,7 +18,7 @@ package org.locationtech.geomesa.tools
 
 import java.io.{File, FileOutputStream}
 
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import org.geotools.data._
 import org.geotools.data.simple.SimpleFeatureCollection
 import org.geotools.filter.text.cql2.CQL
@@ -31,7 +31,7 @@ import org.locationtech.geomesa.utils.geotools.SimpleFeatureTypes
 import scala.collection.JavaConversions._
 import scala.util.Try
 
-class FeaturesTool(config: ScoptArguments, password: String) extends Logging with AccumuloProperties {
+class FeaturesTool(config: ScoptArguments, password: String) extends LazyLogging with AccumuloProperties {
 
   val ds: AccumuloDataStore = Try({
     DataStoreFinder.getDataStore(Map(

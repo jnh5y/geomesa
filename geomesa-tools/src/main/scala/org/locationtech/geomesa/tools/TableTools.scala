@@ -19,7 +19,7 @@ package org.locationtech.geomesa.tools
 import java.util.Map.Entry
 import java.util.UUID
 
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import org.apache.accumulo.core.client.impl.thrift.ThriftTableOperationException
 import org.apache.accumulo.core.client.{TableNotFoundException, ZooKeeperInstance}
 import org.apache.hadoop.fs.Path
@@ -30,7 +30,7 @@ import scala.collection.JavaConversions._
 import scala.util.Try
 import scala.xml.XML
 
-class TableTools(config: ScoptArguments, password: String) extends Logging {
+class TableTools(config: ScoptArguments, password: String) extends LazyLogging {
   val accumuloConf = XML.loadFile(s"${System.getenv("ACCUMULO_HOME")}/conf/accumulo-site.xml")
   val zookeepers = (accumuloConf \\ "property")
     .filter(x => (x \ "name")

@@ -16,7 +16,7 @@
 
 package org.locationtech.geomesa.core.data.mapreduce
 
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import org.apache.accumulo.core.data.{Key, Value}
 import org.apache.hadoop.io.{LongWritable, Text}
 import org.apache.hadoop.mapreduce.{Mapper => HMapper}
@@ -29,7 +29,7 @@ import org.locationtech.geomesa.utils.text.WKBUtils
 import org.opengis.feature.simple.{SimpleFeature, SimpleFeatureType}
 
 object FeatureIngestMapper
-       extends Logging {
+       extends LazyLogging {
 
   type Mapper = HMapper[LongWritable,Text,Key,Value]
 

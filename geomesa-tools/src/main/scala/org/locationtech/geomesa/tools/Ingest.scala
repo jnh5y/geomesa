@@ -16,9 +16,9 @@
 
 package org.locationtech.geomesa.tools
 
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 
-class Ingest extends Logging with AccumuloProperties {
+class Ingest extends LazyLogging with AccumuloProperties {
 
   def getAccumuloDataStoreConf(config: IngestArguments, password: String) = Map (
     "instanceId"        ->  instanceName,
@@ -62,7 +62,7 @@ class Ingest extends Logging with AccumuloProperties {
   }
 }
 
-object Ingest extends App with Logging with GetPassword {
+object Ingest extends App with LazyLogging with GetPassword {
   val parser = new scopt.OptionParser[IngestArguments]("geomesa-tools ingest") {
     head("GeoMesa Tools Ingest", "1.0")
     opt[String]('u', "username") action { (x, c) =>

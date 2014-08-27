@@ -18,7 +18,7 @@ package org.locationtech.geomesa.core.iterators
 
 import java.util.{Date, Map => JMap}
 
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import com.vividsolutions.jts.geom.Geometry
 import org.apache.accumulo.core.data.{Key, Value}
 import org.apache.accumulo.core.iterators.{Filter, IteratorEnvironment, SortedKeyValueIterator}
@@ -30,7 +30,7 @@ import org.locationtech.geomesa.core.index._
 import org.locationtech.geomesa.utils.geotools.SimpleFeatureTypes
 import org.opengis.feature.simple.SimpleFeature
 
-class AttributeIndexFilteringIterator extends Filter with Logging {
+class AttributeIndexFilteringIterator extends Filter with LazyLogging {
 
   protected var filter: org.opengis.filter.Filter = null
   protected var testSimpleFeature: SimpleFeature = null

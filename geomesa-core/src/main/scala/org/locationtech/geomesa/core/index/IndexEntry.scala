@@ -1,6 +1,6 @@
 package org.locationtech.geomesa.core.index
 
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import com.vividsolutions.jts.geom.Geometry
 import org.apache.accumulo.core.data.{Key, Value}
 import org.apache.hadoop.io.Text
@@ -48,7 +48,7 @@ case class IndexEncoder(rowf: TextFormatter[SimpleFeature],
                         cff: TextFormatter[SimpleFeature],
                         cqf: TextFormatter[SimpleFeature],
                         featureEncoder: SimpleFeatureEncoder) 
-  extends Logging {
+  extends LazyLogging {
 
   import org.locationtech.geomesa.core.index.IndexEntry._
   import org.locationtech.geomesa.utils.geohash.GeohashUtils._

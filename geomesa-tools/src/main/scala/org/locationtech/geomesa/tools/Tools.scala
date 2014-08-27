@@ -15,9 +15,9 @@
  */
 package org.locationtech.geomesa.tools
 
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 
-object Tools extends App with Logging with GetPassword {
+object Tools extends App with LazyLogging with GetPassword {
   val parser = new scopt.OptionParser[ScoptArguments]("geomesa-tools") {
     def catalogOpt = opt[String]('c', "catalog").action { (s, c) =>
       c.copy(catalog = s) } required() hidden()

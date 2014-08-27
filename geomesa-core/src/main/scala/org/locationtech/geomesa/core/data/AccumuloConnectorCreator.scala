@@ -1,10 +1,10 @@
 package org.locationtech.geomesa.core.data
 
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import org.apache.accumulo.core.client.{BatchScanner, Scanner}
 import org.opengis.feature.simple.SimpleFeatureType
 
-trait AccumuloConnectorCreator extends Logging {
+trait AccumuloConnectorCreator extends LazyLogging {
 
   /**
    * Create a BatchScanner for the SpatioTemporal Index Table

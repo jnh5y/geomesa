@@ -1,6 +1,6 @@
 package org.locationtech.geomesa.core.index
 
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import org.geotools.factory.CommonFactoryFinder
 import org.geotools.filter.text.ecql.ECQL
 import org.joda.time.{DateTime, DateTimeZone, Interval}
@@ -13,7 +13,7 @@ import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
-class FilterHelperTest extends Specification with Logging {
+class FilterHelperTest extends Specification with LazyLogging {
   val ff = CommonFactoryFinder.getFilterFactory2
 
   val min = IndexSchema.minDateTime

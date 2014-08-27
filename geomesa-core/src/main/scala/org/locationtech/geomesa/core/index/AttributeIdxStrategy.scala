@@ -19,7 +19,7 @@ package org.locationtech.geomesa.core.index
 import java.nio.charset.StandardCharsets
 import java.util.Map.Entry
 
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import org.apache.accumulo.core.client.{IteratorSetting, Scanner}
 import org.apache.accumulo.core.data.{Key, Value, Range => AccRange}
 import org.apache.hadoop.io.Text
@@ -38,7 +38,7 @@ import org.opengis.filter.{PropertyIsLike, PropertyIsEqualTo, Filter}
 
 import scala.collection.JavaConversions._
 
-trait AttributeIdxStrategy extends Strategy with Logging {
+trait AttributeIdxStrategy extends Strategy with LazyLogging {
 
   /**
    * Perform scan against the Attribute Index Table and get an iterator returning records from the Record table

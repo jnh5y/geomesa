@@ -2,7 +2,7 @@ package org.locationtech.geomesa.tools
 
 import java.io.File
 
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import org.geotools.data.shapefile.ShapefileDataStoreFactory
 import org.geotools.data.{DataStoreFinder, Transaction}
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder
@@ -12,7 +12,7 @@ import org.opengis.feature.simple.SimpleFeature
 
 import scala.collection.JavaConversions._
 
-object ShpIngest extends Logging {
+object ShpIngest extends LazyLogging {
   
   def doIngest(config: IngestArguments, dsConf: Map[String, _]): Boolean = {
     val fileUrl = new File(config.file).toURI.toURL

@@ -44,7 +44,7 @@ object QueryPlanner {
 
 case class QueryPlanner(schema: String,
                         featureType: SimpleFeatureType,
-                        featureEncoder: SimpleFeatureEncoder) extends ExplainingLogging {
+                        featureEncoder: SimpleFeatureEncoder) extends ExplainingLazyLogging {
   def buildFilter(geom: Geometry, interval: Interval): KeyPlanningFilter =
     (IndexSchema.somewhere(geom), IndexSchema.somewhen(interval)) match {
       case (None, None)       =>    AcceptEverythingFilter

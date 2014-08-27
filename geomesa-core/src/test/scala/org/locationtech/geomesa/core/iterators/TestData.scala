@@ -2,7 +2,7 @@ package org.locationtech.geomesa.core.iterators
 
 import java.util
 
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import com.vividsolutions.jts.geom.{Geometry, GeometryFactory}
 import org.apache.accumulo.core.Constants
 import org.apache.accumulo.core.data.{Key, Value}
@@ -18,7 +18,7 @@ import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import scala.util.Random
 
-object TestData extends Logging {
+object TestData extends LazyLogging {
   val TEST_USER = "root"
   val TEST_TABLE = "test_table"
   val TEST_AUTHORIZATIONS = Constants.NO_AUTHS

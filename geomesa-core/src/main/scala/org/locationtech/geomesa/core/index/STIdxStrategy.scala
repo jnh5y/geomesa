@@ -18,7 +18,7 @@ package org.locationtech.geomesa.core.index
 
 import java.util.Map.Entry
 
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import com.vividsolutions.jts.geom.{Polygon, GeometryCollection, Geometry}
 import org.apache.accumulo.core.client.IteratorSetting
 import org.apache.accumulo.core.data.{Value, Key}
@@ -41,7 +41,7 @@ import org.opengis.filter.Filter
 import org.opengis.filter.expression.Literal
 import org.opengis.filter.spatial.{BinarySpatialOperator, BBOX}
 
-class STIdxStrategy extends Strategy with Logging {
+class STIdxStrategy extends Strategy with LazyLogging {
 
   def execute(acc: AccumuloConnectorCreator,
               iqp: QueryPlanner,

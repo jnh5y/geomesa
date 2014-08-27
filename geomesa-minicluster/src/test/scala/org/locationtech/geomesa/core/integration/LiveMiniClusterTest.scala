@@ -18,7 +18,7 @@
 
 package org.locationtech.geomesa.core.integration
 
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import org.apache.accumulo.core.client.ZooKeeperInstance
 import org.apache.accumulo.core.client.security.tokens.PasswordToken
 import org.apache.accumulo.core.security.Authorizations
@@ -33,7 +33,7 @@ import org.specs2.runner.JUnitRunner
 import scala.collection.JavaConverters._
 
 @RunWith(classOf[JUnitRunner])
-class LiveMiniClusterTest extends Specification with Logging {
+class LiveMiniClusterTest extends Specification with LazyLogging {
 
   sequential
 

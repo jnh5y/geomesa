@@ -20,7 +20,7 @@ package org.locationtech.geomesa.core.data
 import java.util.{Map => JMap}
 
 import com.google.common.collect.ImmutableSortedSet
-import com.typesafe.scalalogging.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import org.apache.accumulo.core.client._
 import org.apache.accumulo.core.client.admin.TimeType
 import org.apache.accumulo.core.client.mock.MockConnector
@@ -70,7 +70,7 @@ class AccumuloDataStore(val connector: Connector,
                         val recordThreadsConfig: Option[Int] = None,
                         val writeThreadsConfig: Option[Int] = None,
                         val featureEncoding: FeatureEncoding = FeatureEncoding.AVRO)
-    extends AbstractDataStore(true) with AccumuloConnectorCreator with Logging {
+    extends AbstractDataStore(true) with AccumuloConnectorCreator with LazyLogging {
 
   // having at least as many shards as tservers provides optimal parallelism in queries
   private val DEFAULT_MAX_SHARD = connector.instanceOperations().getTabletServers.size()
