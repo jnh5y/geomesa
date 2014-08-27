@@ -612,12 +612,47 @@
                 <groupId>net.alchim31.maven</groupId>
                 <artifactId>scala-maven-plugin</artifactId>
                 <version>3.1.0</version>
+<executions>
+        <execution>
+            <id>compile</id>
+                        <phase>process-resources</phase>
+            <goals>
+                <goal>add-source</goal>
+                <goal>compile</goal>
+            </goals>
+            <configuration>
+                <jvmArgs>
+                    <jvmArg>-Xms64m</jvmArg>
+                    <jvmArg>-Xmx1024m</jvmArg>
+                </jvmArgs>
+                <compilerPlugins>
+                    <compilerPlugin>
+                        <groupId>org.scoverage</groupId>
+                        <artifactId>scalac-scoverage-plugin_${scala.short}</artifactId>
+                        <version>${scoverage-plugin.version}</version>
+                    </compilerPlugin>
+                </compilerPlugins>
+                <args>
+                    <arg>-g:vars</arg>
+                    <arg>-P:scoverage:dataDir:${project.build.directory}</arg>
+                </args>
+            </configuration>
+        </execution>
+        <execution>
+            <id>test</id>
+            <goals>
+                <goal>add-source</goal>
+                <goal>testCompile</goal>
+            </goals>
+        </execution>
+    </executions>
+
+<!--
                 <executions>
                     <execution>
                         <id>scala-compile-first</id>
                         <phase>process-resources</phase>
                         <goals>
-                            <goal>add-source</goal>
                             <goal>compile</goal>
                         </goals>
                     </execution>
@@ -625,6 +660,7 @@
                         <id>scala-test-compile</id>
                         <phase>process-test-resources</phase>
                         <goals>
+                            <goal>add-source</goal>
                             <goal>testCompile</goal>
                         </goals>
                     </execution>
@@ -646,13 +682,14 @@
                     <arg>-g:vars</arg>
                     <arg>-P:scoverage:dataDir:${project.build.outputDirectory}</arg>
                 </args>
-                <!--    <args>
+                   <args>
                         <arg>-nowarn</arg>
                         <arg>-unchecked</arg>
                         <arg>-deprecation</arg>
-                    </args> -->
+                    </args> 
                     <scalaVersion>${scala.version}</scalaVersion>
                 </configuration>
+-->
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
