@@ -134,7 +134,7 @@
         <!-- test dependencies -->
         <dependency>
             <groupId>org.specs2</groupId>
-            <artifactId>specs2_2.10</artifactId>
+            <artifactId>specs2_2.11</artifactId>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
