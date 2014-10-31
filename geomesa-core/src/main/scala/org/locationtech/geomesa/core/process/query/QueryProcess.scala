@@ -69,8 +69,10 @@ class QueryVisitor(features: SimpleFeatureCollection,
 
   def query(source: SimpleFeatureSource, query: Query) = {
     logger.info("Running Geomesa query on source type "+source.getClass.getName)
+    //
     val combinedFilter = ff.and(query.getFilter, filter)
     source.getFeatures(combinedFilter)
+
   }
 
 }

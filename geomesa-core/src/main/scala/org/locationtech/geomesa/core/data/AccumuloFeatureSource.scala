@@ -25,6 +25,7 @@ import org.joda.time.DateTime
 import org.locationtech.geomesa.core.process.knn.KNNVisitor
 import org.locationtech.geomesa.core.process.proximity.ProximityVisitor
 import org.locationtech.geomesa.core.process.query.QueryVisitor
+import org.locationtech.geomesa.core.process.temporalDensity.TemporalDensityVisitor
 import org.locationtech.geomesa.core.process.tube.TubeVisitor
 import org.locationtech.geomesa.core.process.unique.AttributeVisitor
 import org.opengis.feature.FeatureVisitor
@@ -82,6 +83,7 @@ class AccumuloFeatureCollection(source: SimpleFeatureSource, query: Query)
     if(query.getHints.containsKey(TRANSFORMS)) query.getHints.get(TRANSFORM_SCHEMA).asInstanceOf[SimpleFeatureType]
     else super.getSchema
 
+<<<<<<< HEAD
   override def accepts(visitor: FeatureVisitor, progress: ProgressListener) =
     visitor match {
       // TODO GEOMESA-421 implement min/max iterators
@@ -118,4 +120,19 @@ trait CachingFeatureSource extends AccumuloAbstractFeatureSource {
   }
 
   override def getCount(query: Query): Int = getFeatures(query).size()
+=======
+  override def accepts(visitor: FeatureVisitor, progress: ProgressListener) = visitor match {
+    // TODO: implement min/max iterators
+    case v: MinVisitor               => v.setValue(new DateTime(2000,1,1,0,0).toDate)
+    case v: MaxVisitor               => v.setValue(new DateTime().toDate)
+    case v: BoundsVisitor            => v.reset(ds.getBounds(query))
+    case v: TubeVisitor              => v.setValue(v.tubeSelect(source, query))
+    case v: ProximityVisitor         => v.setValue(v.proximitySearch(source, query))
+    case v: QueryVisitor             => v.setValue(v.query(source, query))
+    case v: TemporalDensityVisitor   => v.setValue(v.query(source, query))
+    case v: KNNVisitor               => v.setValue(v.kNNSearch(source,query))
+    case _                           => super.accepts(visitor, progress)
+  }
+
+>>>>>>> tdi
 }
