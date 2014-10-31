@@ -110,4 +110,15 @@
     <property name="order" value="200"/>
   </bean>
 
+    <!-- link for the geomesa demo page -->
+    <bean id="geoMesaDemoPage" class="org.geoserver.web.MenuPageInfo">
+        <property name="id" value="geoMesaDemoPage"/>
+        <property name="titleKey" value="GeoMesaDemoPage.link.title"/>
+        <property name="descriptionKey" value="GeoMesaDemoPage.link.description"/>
+        <property name="componentClass" value="org.locationtech.geomesa.plugin.ui.GeoMesaDemoPage"/>
+        <property name="icon" value="../../../../../org/geoserver/web/img/icons/silk/information.png"/>
+        <property name="category" ref="geoMesaCategory"/>
+        <property name="order" value="400"/>
+    </bean>
+
 </beans>
