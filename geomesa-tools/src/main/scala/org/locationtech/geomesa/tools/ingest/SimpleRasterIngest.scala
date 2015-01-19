@@ -107,7 +107,7 @@ class SimpleRasterIngest(config: Map[String, Option[String]], cs: AccumuloCovera
     val ingestTime = config(IngestRasterParams.TIME).map(df.parseDateTime(_)).getOrElse(new DateTime(DateTimeZone.UTC))
     val metadata = DecodedIndex(Raster.getRasterId(rasterName), bbox.geom, Some(ingestTime.getMillis))
 
-    val res =  RasterUtils.sharedRasterParams(rasterGrid.getGridGeometry, envelope).accumuloResolution
+    val res =  RasterUtils.sharedRasterParams(rasterGrid.getGridGeometry, envelope).suggestedQueryResolution
 
     val raster = Raster(rasterGrid.getRenderedImage, metadata, res)
 

@@ -37,7 +37,8 @@ import org.opengis.filter.Filter
 
 // TODO: Constructor needs info to create Row Formatter
 // right now the schema is not used
-case class AccumuloRasterQueryPlanner(schema: RasterIndexSchema) extends Logging with IndexFilterHelpers {
+// TODO: Consider adding resolutions + extent info  https://geomesa.atlassian.net/browse/GEOMESA-645
+case class AccumuloRasterQueryPlanner(schema: RasterIndexSchema, availableResolutions: List[Double]) extends Logging with IndexFilterHelpers {
 
   def getQueryPlan(rq: RasterQuery): QueryPlan = {
 
@@ -47,7 +48,7 @@ case class AccumuloRasterQueryPlanner(schema: RasterIndexSchema) extends Logging
     // that perfectly match the bbox or ones that fully contain it.
     val closestAcceptableGeoHash = GeohashUtils.getClosestAcceptableGeoHash(rq.bbox).getOrElse(GeoHash("")).hash
     val hashes = (BoundingBox.getGeoHashesFromBoundingBox(rq.bbox) :+ closestAcceptableGeoHash).toSet.toList
-    val res = lexiEncodeDoubleToString(rq.resolution)
+    val res = getLexicodedResolution(rq.resolution)
     logger.debug(s"Planner: BBox: ${rq.bbox} has geohashes: $hashes, and has encoded Resolution: $res")
 
     val rows = hashes.map { gh =>
@@ -63,6 +64,32 @@ case class AccumuloRasterQueryPlanner(schema: RasterIndexSchema) extends Logging
     // TODO: WCS: setup a CFPlanner to match against a list of strings
     // ticket is GEOMESA-559
     QueryPlan(Seq(cfg), rows, Seq())
+  }
+
+  def getLexicodedResolution(suggestedResolution: Double): String =
+    lexiEncodeDoubleToString(getResolution(suggestedResolution))
+
+  def getResolution(suggestedResolution: Double): Double = {
+    // TODO: Change to logging
+    println(s"JNH: getResolution: $suggestedResolution availableResolutions: $availableResolutions")
+
+    val ret = if (availableResolutions.length == 1) availableResolutions.head
+    else if (availableResolutions.isEmpty) 1.0 // Really?
+    else {
+      val lowerResolutions = availableResolutions.filter(_ <= suggestedResolution)
+
+      println(s"JNH: $lowerResolutions")
+
+      lowerResolutions match {
+        case Nil => availableResolutions.min
+        case _ => lowerResolutions.max
+      }
+    }
+    println(s"getResolution $suggestedResolution\n" +
+            s"availableResolutions: ${availableResolutions.sorted}\n" +
+            s"Returned resolution: $ret"
+    )
+    ret
   }
 
   def constructFilter(ref: ReferencedEnvelope, featureType: SimpleFeatureType): Filter = {

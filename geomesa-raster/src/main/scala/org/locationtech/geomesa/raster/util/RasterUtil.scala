@@ -166,7 +166,7 @@ object RasterUtils {
     val height = gg.getGridRange2D.getHeight
     val resX = (envelope.getMaximum(0) - envelope.getMinimum(0)) / width
     val resY = (envelope.getMaximum(1) - envelope.getMinimum(1)) / height
-    val accumuloResolution = math.min(resX, resY)
+    val suggestedQueryResolution = math.min(resX, resY)
   }
 }
 
