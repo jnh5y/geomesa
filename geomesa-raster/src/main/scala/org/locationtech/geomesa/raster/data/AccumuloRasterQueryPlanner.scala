@@ -49,7 +49,7 @@ case class AccumuloRasterQueryPlanner(schema: RasterIndexSchema, availableResolu
     val closestAcceptableGeoHash = GeohashUtils.getClosestAcceptableGeoHash(rq.bbox).getOrElse(GeoHash("")).hash
     val hashes = (BoundingBox.getGeoHashesFromBoundingBox(rq.bbox) :+ closestAcceptableGeoHash).toSet.toList
     val res = getLexicodedResolution(rq.resolution)
-    logger.debug(s"Planner: BBox: ${rq.bbox} has geohashes: $hashes, and has encoded Resolution: $res")
+    logger.debug(s"RasterQueryPlanner: BBox: ${rq.bbox} has geohashes: $hashes, and has encoded Resolution: $res")
 
     val rows = hashes.map { gh =>
       // TODO: leverage the RasterIndexSchema to construct the range.
@@ -70,25 +70,20 @@ case class AccumuloRasterQueryPlanner(schema: RasterIndexSchema, availableResolu
     lexiEncodeDoubleToString(getResolution(suggestedResolution))
 
   def getResolution(suggestedResolution: Double): Double = {
-    // TODO: Change to logging
-    println(s"JNH: getResolution: $suggestedResolution availableResolutions: $availableResolutions")
-
-    val ret = if (availableResolutions.length == 1) availableResolutions.head
-    else if (availableResolutions.isEmpty) 1.0 // Really?
-    else {
-      val lowerResolutions = availableResolutions.filter(_ <= suggestedResolution)
-
-      println(s"JNH: $lowerResolutions")
-
-      lowerResolutions match {
-        case Nil => availableResolutions.min
-        case _ => lowerResolutions.max
-      }
+    logger.debug(s"RasterQueryPlanner: trying to get resolution $suggestedResolution " +
+      s"from available Resolutions: ${availableResolutions.sorted}")
+    val ret = availableResolutions match {
+      case empty if availableResolutions.isEmpty   => 1.0
+      case one if availableResolutions.length == 1 => availableResolutions.head
+      case _                                       =>
+            val lowerResolutions = availableResolutions.filter(_ <= suggestedResolution)
+            logger.debug(s"RasterQueryPlanner: Picking a resolution from: $lowerResolutions")
+            lowerResolutions match {
+              case Nil => availableResolutions.min
+              case _ => lowerResolutions.max
+            }
     }
-    println(s"getResolution $suggestedResolution\n" +
-            s"availableResolutions: ${availableResolutions.sorted}\n" +
-            s"Returned resolution: $ret"
-    )
+    logger.debug(s"RasterQueryPlanner: Decided to use resolution: $ret")
     ret
   }
 

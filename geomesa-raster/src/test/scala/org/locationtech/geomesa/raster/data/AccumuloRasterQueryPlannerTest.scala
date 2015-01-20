@@ -5,7 +5,6 @@ import org.junit.runner.RunWith
 import org.locationtech.geomesa.raster._
 import org.locationtech.geomesa.raster.index.RasterIndexSchema
 import org.locationtech.geomesa.raster.util.RasterUtils
-import org.locationtech.geomesa.utils.geohash.{BoundingBox, GeohashUtils, GeoHash}
 import org.specs2.matcher.MatchResult
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
@@ -34,18 +33,14 @@ class AccumuloRasterQueryPlannerTest extends Specification {
     (2000, 45.0/1024.0)
   )
 
-  // Query planner should return a valid resolution.
   "RasterQueryPlanner" should {
-    "round down" in {
-
+    "return a valid resolution by rounding down" in {
       testCases.map {
         case (size, expected) =>
           runTest(size, expected)
       }
     }
   }
-
-  // Query planner should round up/down???
 
   def runTest(size: Int, expectedResolution: Double): MatchResult[Double] = {
     val q1 = RasterUtils.generateQuery(0, 45, 0, 45, 45.0/size)
