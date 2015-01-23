@@ -79,7 +79,7 @@ class AccumuloBackedRasterOperations(val connector: Connector,
   // TODO: WCS: GEOMESA-585 Add ability to use arbitrary schemas
   val schema = RasterIndexSchema("")
 
-  lazy val queryPlanner: AccumuloRasterQueryPlanner = new AccumuloRasterQueryPlanner(schema, getAvailableResolutions.toList)
+  lazy val queryPlanner: AccumuloRasterQueryPlanner = new AccumuloRasterQueryPlanner(schema)
 
   private val tableOps = connector.tableOperations()
   private val securityOps = connector.securityOperations
@@ -110,10 +110,9 @@ class AccumuloBackedRasterOperations(val connector: Connector,
     //TODO: WCS: Abstract number of threads
     val numQThreads = 20
     val batchScanner = connector.createBatchScanner(rasterTable, authorizationsProvider.getAuthorizations, numQThreads)
-   // val scanner = connector.createScanner(rasterTable,  authorizationsProvider.getAuthorizations)
-    val plan = queryPlanner.getQueryPlan(rasterQuery)
+    val plan = queryPlanner.getQueryPlan(rasterQuery, getAvailableResolutions.toList)
     configureBatchScanner(batchScanner, plan)
-    adaptIterator(SelfClosingBatchScanner(batchScanner))
+    adaptIteratorToChunks(SelfClosingBatchScanner(batchScanner))
   }
 
   def getBounds(): BoundingBox = {
@@ -152,7 +151,7 @@ class AccumuloBackedRasterOperations(val connector: Connector,
     new GridEnvelope2D(0, 0, width, height)
   }
 
-  def adaptIterator(iter: java.util.Iterator[Entry[Key, Value]]): Iterator[Raster] = {
+  def adaptIteratorToChunks(iter: java.util.Iterator[Entry[Key, Value]]): Iterator[Raster] = {
     iter.map { entry => schema.decode((entry.getKey, entry.getValue)) }
   }
 

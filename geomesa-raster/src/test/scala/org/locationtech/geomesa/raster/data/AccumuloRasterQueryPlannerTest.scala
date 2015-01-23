@@ -17,7 +17,7 @@ class AccumuloRasterQueryPlannerTest extends Specification {
   val schema = RasterIndexSchema("")
   val availableResolutions = List[Double](45.0/256.0, 45.0/1024.0)
 
-  val arqp = AccumuloRasterQueryPlanner(schema, availableResolutions)
+  val arqp = AccumuloRasterQueryPlanner(schema)
 
   val testCases = List(
     (128, 45.0/256.0),
@@ -44,7 +44,7 @@ class AccumuloRasterQueryPlannerTest extends Specification {
 
   def runTest(size: Int, expectedResolution: Double): MatchResult[Double] = {
     val q1 = RasterUtils.generateQuery(0, 45, 0, 45, 45.0/size)
-    val qp = arqp.getQueryPlan(q1)
+    val qp = arqp.getQueryPlan(q1, availableResolutions)
 
     val rangeString = qp.ranges.head.getStartKey.getRow.toString
     val encodedDouble = rangeString.split("~")(1)

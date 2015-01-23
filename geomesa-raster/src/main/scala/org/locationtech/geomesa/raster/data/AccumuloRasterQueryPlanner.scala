@@ -38,9 +38,9 @@ import org.opengis.filter.Filter
 // TODO: Constructor needs info to create Row Formatter
 // right now the schema is not used
 // TODO: Consider adding resolutions + extent info  https://geomesa.atlassian.net/browse/GEOMESA-645
-case class AccumuloRasterQueryPlanner(schema: RasterIndexSchema, availableResolutions: List[Double]) extends Logging with IndexFilterHelpers {
+case class AccumuloRasterQueryPlanner(schema: RasterIndexSchema) extends Logging with IndexFilterHelpers {
 
-  def getQueryPlan(rq: RasterQuery): QueryPlan = {
+  def getQueryPlan(rq: RasterQuery, availableResolutions: List[Double]): QueryPlan = {
 
     // TODO: WCS: Improve this if possible
     // ticket is GEOMESA-560
@@ -48,7 +48,7 @@ case class AccumuloRasterQueryPlanner(schema: RasterIndexSchema, availableResolu
     // that perfectly match the bbox or ones that fully contain it.
     val closestAcceptableGeoHash = GeohashUtils.getClosestAcceptableGeoHash(rq.bbox).getOrElse(GeoHash("")).hash
     val hashes = (BoundingBox.getGeoHashesFromBoundingBox(rq.bbox) :+ closestAcceptableGeoHash).toSet.toList
-    val res = getLexicodedResolution(rq.resolution)
+    val res = getLexicodedResolution(rq.resolution, availableResolutions)
     logger.debug(s"RasterQueryPlanner: BBox: ${rq.bbox} has geohashes: $hashes, and has encoded Resolution: $res")
 
     val rows = hashes.map { gh =>
@@ -66,10 +66,10 @@ case class AccumuloRasterQueryPlanner(schema: RasterIndexSchema, availableResolu
     QueryPlan(Seq(cfg), rows, Seq())
   }
 
-  def getLexicodedResolution(suggestedResolution: Double): String =
-    lexiEncodeDoubleToString(getResolution(suggestedResolution))
+  def getLexicodedResolution(suggestedResolution: Double, availableResolutions: List[Double]): String =
+    lexiEncodeDoubleToString(getResolution(suggestedResolution, availableResolutions))
 
-  def getResolution(suggestedResolution: Double): Double = {
+  def getResolution(suggestedResolution: Double, availableResolutions: List[Double]): Double = {
     logger.debug(s"RasterQueryPlanner: trying to get resolution $suggestedResolution " +
       s"from available Resolutions: ${availableResolutions.sorted}")
     val ret = availableResolutions match {
