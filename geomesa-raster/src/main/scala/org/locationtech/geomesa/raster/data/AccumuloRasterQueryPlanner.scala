@@ -49,7 +49,7 @@ case class AccumuloRasterQueryPlanner(schema: RasterIndexSchema) extends Logging
     val closestAcceptableGeoHash = GeohashUtils.getClosestAcceptableGeoHash(rq.bbox).getOrElse(GeoHash("")).hash
     val hashes = (BoundingBox.getGeoHashesFromBoundingBox(rq.bbox) :+ closestAcceptableGeoHash).toSet.toList
     val res = getLexicodedResolution(rq.resolution, availableResolutions)
-    logger.debug(s"RasterQueryPlanner: BBox: ${rq.bbox} has geohashes: $hashes, and has encoded Resolution: $res")
+    println(s"RasterQueryPlanner: BBox: ${rq.bbox} has geohashes: $hashes, and has encoded Resolution: $res")
 
     val rows = hashes.map { gh =>
       // TODO: leverage the RasterIndexSchema to construct the range.
@@ -70,20 +70,20 @@ case class AccumuloRasterQueryPlanner(schema: RasterIndexSchema) extends Logging
     lexiEncodeDoubleToString(getResolution(suggestedResolution, availableResolutions))
 
   def getResolution(suggestedResolution: Double, availableResolutions: List[Double]): Double = {
-    logger.debug(s"RasterQueryPlanner: trying to get resolution $suggestedResolution " +
+    println(s"RasterQueryPlanner: trying to get resolution $suggestedResolution " +
       s"from available Resolutions: ${availableResolutions.sorted}")
     val ret = availableResolutions match {
       case empty if availableResolutions.isEmpty   => 1.0
       case one if availableResolutions.length == 1 => availableResolutions.head
       case _                                       =>
             val lowerResolutions = availableResolutions.filter(_ <= suggestedResolution)
-            logger.debug(s"RasterQueryPlanner: Picking a resolution from: $lowerResolutions")
+            println(s"RasterQueryPlanner: Picking a resolution from: $lowerResolutions")
             lowerResolutions match {
               case Nil => availableResolutions.min
               case _ => lowerResolutions.max
             }
     }
-    logger.debug(s"RasterQueryPlanner: Decided to use resolution: $ret")
+    println(s"RasterQueryPlanner: Decided to use resolution: $ret")
     ret
   }
 

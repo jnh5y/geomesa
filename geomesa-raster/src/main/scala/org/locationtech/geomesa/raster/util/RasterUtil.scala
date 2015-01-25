@@ -108,9 +108,16 @@ object RasterUtils {
     val mosaicXres = env.getSpan(0) / mosaic.getWidth
     val mosaicYres = env.getSpan(1) / mosaic.getHeight
     val cropped = cropRaster(raster, env)
-    val scaled = rescaleBufferedImage(mosaicXres, mosaicYres, cropped)
-    val originX = Math.ceil((rasterEnv.getMinX - env.getMinimum(0)) / mosaicXres).toInt
-    val originY = Math.ceil((env.getMaximum(1) - rasterEnv.getMaxY) / mosaicYres).toInt
+
+    val scaled = rescaleBufferedImage(mosaicXres, mosaicYres, cropped, raster.resolution)
+
+    // JNH: I tried out floor instead of ceil in an effort to get rid of some off-by-one errors (black/blank lines
+    //  in the mosaiced image).  It worked a little bit...  We may need to round with 'closest'...
+    val originX = Math.floor((rasterEnv.getMinX - env.getMinimum(0)) / mosaicXres).toInt
+    val originY = Math.floor((env.getMaximum(1) - rasterEnv.getMaxY) / mosaicYres).toInt
+
+    println(s"In PopulateMosaic: mosaicX/Yres: $mosaicXres/$mosaicYres new origin $originX $originY")
+
     mosaic.getRaster.setRect(originX, originY, scaled.getData)
     scaled.flush()
   }
@@ -120,26 +127,52 @@ object RasterUtils {
     if (chunks.isEmpty) {
       getEmptyImage(queryWidth, queryHeight)
     } else {
-      val rescaleX = resX / (queryEnv.getSpan(0) / queryWidth)
-      val rescaleY = resY / (queryEnv.getSpan(1) / queryHeight)
-      val imageWidth = Math.max(Math.round(queryWidth / rescaleX), 1).toInt
-      val imageHeight = Math.max(Math.round(queryHeight / rescaleY), 1).toInt
+      // Why are we calculating this?  The rescaleX and rescaleY were always 1.0.
+//      val rescaleX = resX / (queryEnv.getSpan(0) / queryWidth)
+//      val rescaleY = resY / (queryEnv.getSpan(1) / queryHeight)
+//      val imageWidth = Math.max(Math.round(queryWidth / rescaleX), 1).toInt
+//      val imageHeight = Math.max(Math.round(queryHeight / rescaleY), 1).toInt
+
+      println(s"In evenBetterMosaic: rescaleX/y: $resX/$resY $queryWidth $queryHeight")
+
       val firstRaster = chunks.next()
-      val mosaic = allocateBufferedImage(imageWidth, imageHeight, firstRaster.chunk)
+      val mosaic = allocateBufferedImage(queryWidth, queryHeight, firstRaster.chunk)
       populateMosaic(mosaic, firstRaster, queryEnv, resX, resY)
       while (chunks.hasNext) {
         populateMosaic(mosaic, chunks.next(), queryEnv, resX, resY)
       }
-      rescaleBufferedImage(rescaleX, rescaleY, mosaic)
+
+      //println(s"Rescaling result $resX/$resY")
+
+      //rescaleBufferedImage(resX, resY, mosaic)
+      // Is any more scaling required?
+      mosaic
     }
   }
 
-  def rescaleBufferedImage(rescaleX: Double, rescaleY: Double, image: BufferedImage): BufferedImage = {
-    val xScaled = (image.getWidth * rescaleX).toInt
-    val yScaled = (image.getHeight * rescaleY).toInt
-    val result = resize(image, Method.SPEED, xScaled, yScaled, null)
-    image.flush()
-    result
+  // We will 'plug and play' alternative methods here.  This can be our interface to outside libraries for scaling.
+  // targetResX/Y should be the desired resolution:
+  // originalRes gives us our current scale!
+  def rescaleBufferedImage(targetResX: Double, targetResY: Double, image: BufferedImage, originalRes: Double): BufferedImage = {
+
+    // NB:  We round the stored resolution!
+    //  Consequently, the request resolution will not match...  Thoughts on acceptable ranges?
+    if (originalRes / targetResX > 0.99 && originalRes / targetResX < 1.01) {
+      println(s"OrigRes: $originalRes / target res: $targetResX = ${originalRes/targetResX} > 0.99; not scaling.")
+      image
+    } else {
+      // From reading on the interwebs, it sounds like upscaling (>1.0), we may want to use bilinear sampling.
+      //  For downsampling, we may wish to use multi-step bilinear downsampling...
+      //  The main note to make here is that we may wish to use different methods for up- and down-sampling
+
+      val xScaled = (image.getWidth * originalRes / targetResX).toInt
+      val yScaled = (image.getHeight * originalRes / targetResY).toInt
+
+      println(s"In rescale: Scaling ${image.getWidth} x ${image.getHeight} to $xScaled x $yScaled}")
+      val result = resize(image, Method.SPEED, xScaled, yScaled, null)
+      image.flush()
+      result
+    }
   }
 
   def cropRaster(raster: Raster, cropEnv: Envelope): BufferedImage = {
