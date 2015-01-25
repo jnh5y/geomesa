@@ -87,7 +87,7 @@ object RasterUtils {
   def renderedImageToGridCoverage2d(name: String, image: RenderedImage, env: Envelope): GridCoverage2D =
     defaultGridCoverageFactory.create(name, image, env)
 
-  def getEmptyMosaic(width: Int, height: Int, chunk: RenderedImage): BufferedImage = {
+  def allocateBufferedImage(width: Int, height: Int, chunk: RenderedImage): BufferedImage = {
     val properties = new JHashtable[String, Object]
     if (chunk.getPropertyNames != null) {
       chunk.getPropertyNames.foreach(name => properties.put(name, chunk.getProperty(name)))
@@ -103,14 +103,16 @@ object RasterUtils {
     new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY)
   }
 
-  def setMosaicData(mosaic: BufferedImage, raster: Raster, env: Envelope, resX: Double, resY: Double) = {
+  def populateMosaic(mosaic: BufferedImage, raster: Raster, env: Envelope, resX: Double, resY: Double) = {
     val rasterEnv = raster.referencedEnvelope.intersection(envelopeToReferencedEnvelope(env))
-    val chunk = raster.chunk
-    val dx = Math.ceil((rasterEnv.getMinX - env.getMinimum(0)) / resX).toInt
-    val dy = Math.ceil((env.getMaximum(1) - rasterEnv.getMaxY) / resY).toInt
-    // Probably need to crop things here!
+    val mosaicXres = env.getSpan(0) / mosaic.getWidth
+    val mosaicYres = env.getSpan(1) / mosaic.getHeight
     val cropped = cropRaster(raster, env)
-    mosaic.getRaster.setRect(dx, dy, cropped)
+    val scaled = rescaleBufferedImage(mosaicXres, mosaicYres, cropped)
+    val originX = Math.ceil((rasterEnv.getMinX - env.getMinimum(0)) / mosaicXres).toInt
+    val originY = Math.ceil((env.getMaximum(1) - rasterEnv.getMaxY) / mosaicYres).toInt
+    mosaic.getRaster.setRect(originX, originY, scaled.getData)
+    scaled.flush()
   }
 
   def evenBetterMosaic(chunks: Iterator[Raster], queryWidth: Int, queryHeight: Int,
@@ -120,21 +122,19 @@ object RasterUtils {
     } else {
       val rescaleX = resX / (queryEnv.getSpan(0) / queryWidth)
       val rescaleY = resY / (queryEnv.getSpan(1) / queryHeight)
-      val scaledWidth = queryWidth / rescaleX
-      val scaledHeight = queryHeight / rescaleY
-      val imageWidth = Math.max(Math.round(scaledWidth), 1).toInt
-      val imageHeight = Math.max(Math.round(scaledHeight), 1).toInt
+      val imageWidth = Math.max(Math.round(queryWidth / rescaleX), 1).toInt
+      val imageHeight = Math.max(Math.round(queryHeight / rescaleY), 1).toInt
       val firstRaster = chunks.next()
-      val mosaic = getEmptyMosaic(imageWidth, imageHeight, firstRaster.chunk)
-      setMosaicData(mosaic, firstRaster, queryEnv, resX, resY)
+      val mosaic = allocateBufferedImage(imageWidth, imageHeight, firstRaster.chunk)
+      populateMosaic(mosaic, firstRaster, queryEnv, resX, resY)
       while (chunks.hasNext) {
-        setMosaicData(mosaic, chunks.next(), queryEnv, resX, resY)
+        populateMosaic(mosaic, chunks.next(), queryEnv, resX, resY)
       }
-      rescaleMosaic(rescaleX, rescaleY, mosaic)
+      rescaleBufferedImage(rescaleX, rescaleY, mosaic)
     }
   }
 
-  def rescaleMosaic(rescaleX: Double, rescaleY: Double, image: BufferedImage): BufferedImage = {
+  def rescaleBufferedImage(rescaleX: Double, rescaleY: Double, image: BufferedImage): BufferedImage = {
     val xScaled = (image.getWidth * rescaleX).toInt
     val yScaled = (image.getHeight * rescaleY).toInt
     val result = resize(image, Method.SPEED, xScaled, yScaled, null)
@@ -142,28 +142,24 @@ object RasterUtils {
     result
   }
 
-  def cropRaster(raster: Raster, cropEnv: Envelope): JRaster = {
+  def cropRaster(raster: Raster, cropEnv: Envelope): BufferedImage = {
+    // need to check if intersection is valid (ie, not just two corners touching
     val rasterEnv = raster.referencedEnvelope
     val intersection = rasterEnv.intersection(envelopeToReferencedEnvelope(cropEnv))
-    if (intersection.getArea < rasterEnv.getArea) {
-      val chunkXRes = rasterEnv.getWidth / raster.chunk.getWidth
-      val chunkYRes = rasterEnv.getHeight / raster.chunk.getHeight
-      // TODO: figure out Math.ceil or not stuff
-      val uLX = Math.ceil((intersection.getMinX - rasterEnv.getMinimum(0)) / chunkXRes).toInt
-      val uLY = Math.ceil((rasterEnv.getMaximum(1) - intersection.getMaxY) / chunkYRes).toInt
-      val w = (intersection.getWidth / chunkXRes).toInt
-      val h = (intersection.getHeight / chunkYRes).toInt
-      val b = asBufferedImage(raster.chunk)
-      val result = crop(b, uLX, uLY, w, h, null)
-      b.flush()
-      result.getData
-    } else {
-      raster.chunk.getData
-    }
+    val chunkXRes = rasterEnv.getWidth / raster.chunk.getWidth
+    val chunkYRes = rasterEnv.getHeight / raster.chunk.getHeight
+    val w = (intersection.getWidth / chunkXRes).toInt
+    val h = (intersection.getHeight / chunkYRes).toInt
+    val uLX = Math.ceil((intersection.getMinX - rasterEnv.getMinimum(0)) / chunkXRes).toInt
+    val uLY = Math.ceil((rasterEnv.getMaximum(1) - intersection.getMaxY) / chunkYRes).toInt
+    val b = asBufferedImage(raster.chunk)
+    val result = crop(b, uLX, uLY, w, h, null)
+    b.flush()
+    result
   }
 
   def asBufferedImage(r: RenderedImage): BufferedImage = {
-    val bufferedResult = getEmptyMosaic(r.getWidth, r.getHeight, r)
+    val bufferedResult = allocateBufferedImage(r.getWidth, r.getHeight, r)
     bufferedResult.getRaster.setRect(0, 0, r.getData)
     bufferedResult
   }
@@ -184,11 +180,11 @@ object RasterUtils {
       val imageWidth = Math.max(Math.round(scaledWidth), 1).toInt
       val imageHeight = Math.max(Math.round(scaledHeight), 1).toInt
       val firstRaster = rasters.next()
-      val mosaic = getEmptyMosaic(imageWidth, imageHeight, firstRaster.chunk)
-      setMosaicData(mosaic, firstRaster, env, resX, resY)
+      val mosaic = allocateBufferedImage(imageWidth, imageHeight, firstRaster.chunk)
+      populateMosaic(mosaic, firstRaster, env, resX, resY)
       while (rasters.hasNext) {
         val raster = rasters.next()
-        setMosaicData(mosaic, raster, env, resX, resY)
+        populateMosaic(mosaic, raster, env, resX, resY)
       }
       mosaic
     }
