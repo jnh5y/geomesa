@@ -99,10 +99,25 @@ object RasterUtils {
     new BufferedImage(colorModel, emptyRaster, alphaPremultiplied, properties)
   }
 
-  def getEmptyImage(width: Int, height: Int): BufferedImage = {
-    new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY)
+  def getEmptyImage(width: Int, height: Int, imageType: Int): BufferedImage = {
+    new BufferedImage(width, height, imageType)
   }
 
+  def writeToMosaic(mosaic: BufferedImage, raster: Raster, env: Envelope, resX: Double, resY: Double) = {
+    val rasterEnv = raster.referencedEnvelope.intersection(envelopeToReferencedEnvelope(env))
+
+    val cropped = cropRaster(raster, env)
+
+    // JNH: I tried out floor instead of ceil in an effort to get rid of some off-by-one errors (black/blank lines
+    //  in the mosaiced image).  It worked a little bit...  We may need to round with 'closest'...
+    val originX = Math.floor((rasterEnv.getMinX - env.getMinimum(0)) / resX).toInt
+    val originY = Math.floor((env.getMaximum(1) - rasterEnv.getMaxY) / resY).toInt
+
+    mosaic.getRaster.setRect(originX, originY, cropped.getData)
+    cropped.flush()
+  }
+
+  // Has some scaling
   def populateMosaic(mosaic: BufferedImage, raster: Raster, env: Envelope, resX: Double, resY: Double) = {
     val rasterEnv = raster.referencedEnvelope.intersection(envelopeToReferencedEnvelope(env))
     val mosaicXres = env.getSpan(0) / mosaic.getWidth
@@ -125,7 +140,7 @@ object RasterUtils {
   def evenBetterMosaic(chunks: Iterator[Raster], queryWidth: Int, queryHeight: Int,
                        resX: Double, resY: Double, queryEnv: Envelope): BufferedImage = {
     if (chunks.isEmpty) {
-      getEmptyImage(queryWidth, queryHeight)
+      getEmptyImage(queryWidth, queryHeight, BufferedImage.TYPE_BYTE_GRAY)
     } else {
       // Why are we calculating this?  The rescaleX and rescaleY were always 1.0.
 //      val rescaleX = resX / (queryEnv.getSpan(0) / queryWidth)
@@ -136,15 +151,22 @@ object RasterUtils {
       println(s"In evenBetterMosaic: rescaleX/y: $resX/$resY $queryWidth $queryHeight")
 
       val firstRaster = chunks.next()
-      val mosaic = allocateBufferedImage(queryWidth, queryHeight, firstRaster.chunk)
-      populateMosaic(mosaic, firstRaster, queryEnv, resX, resY)
+      // firstRaster.resolution is a lie.  It has been rounded!
+      val accumuloRasterRes = firstRaster.referencedEnvelope.getSpan(0) / firstRaster.chunk.getWidth   // Assume that all are the same resolution
+
+      val mosaicX = (queryEnv.getSpan(0) / accumuloRasterRes).toInt
+      val mosaicY = (queryEnv.getSpan(1) / accumuloRasterRes).toInt
+
+      val mosaic = allocateBufferedImage(mosaicX, mosaicY, firstRaster.chunk)
+
+      writeToMosaic(mosaic, firstRaster, queryEnv, accumuloRasterRes, accumuloRasterRes)
       while (chunks.hasNext) {
-        populateMosaic(mosaic, chunks.next(), queryEnv, resX, resY)
+        writeToMosaic(mosaic, chunks.next(), queryEnv, accumuloRasterRes, accumuloRasterRes)
       }
 
       //println(s"Rescaling result $resX/$resY")
 
-      //rescaleBufferedImage(resX, resY, mosaic)
+      rescaleBufferedImage(resX, resY, mosaic, accumuloRasterRes)
       // Is any more scaling required?
       mosaic
     }
@@ -204,7 +226,7 @@ object RasterUtils {
   def mosaicRasters(rasters: Iterator[Raster], width: Int, height: Int,
                     env: Envelope, resX: Double, resY: Double): BufferedImage = {
     if (rasters.isEmpty) {
-      getEmptyImage(width, height)
+      getEmptyImage(width, height, BufferedImage.TYPE_BYTE_GRAY)
     } else {
       val rescaleX = resX / (env.getSpan(0) / width)
       val rescaleY = resY / (env.getSpan(1) / height)

@@ -122,13 +122,13 @@ class MosaicTest extends Specification {
 //    "mosaic Rasters appropriately for 4 10x10 Rasters" in {
 //      runAccumuloMosaicTest(10, 10, BoundingBox(-45.0001, 45.0001, -45.0001, 45.0001))
 //    }
-
-    "mosaic Rasters appropriately for 4 100x100 Rasters" in {
-      runAccumuloMosaicTest(100, 100, BoundingBox(-135.0001, -44.9999, -45.0001, 45.0001))
-    }
-
-    "mosaic Rasters appropriately for 4 1000x1000 Rasters" in {
-      runAccumuloMosaicTest(1000, 1000, BoundingBox(-135.0001, -44.9999, -45.0001, 45.0001))
-    }
+//
+//    "mosaic Rasters appropriately for 4 100x100 Rasters" in {
+//      runAccumuloMosaicTest(100, 100, BoundingBox(-135.0001, -44.9999, -45.0001, 45.0001))
+//    }
+//
+//    "mosaic Rasters appropriately for 4 1000x1000 Rasters" in {
+//      runAccumuloMosaicTest(1000, 1000, BoundingBox(-135.0001, -44.9999, -45.0001, 45.0001))
+//    }
   }
 }

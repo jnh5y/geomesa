@@ -40,6 +40,16 @@ import org.opengis.filter.Filter
 // TODO: Consider adding resolutions + extent info  https://geomesa.atlassian.net/browse/GEOMESA-645
 case class AccumuloRasterQueryPlanner(schema: RasterIndexSchema) extends Logging with IndexFilterHelpers {
 
+  // Dotting without the dots.
+  def shorten(set: Seq[String]): Iterator[String] = {
+    val len = set.headOption.map(_.length).getOrElse(0)
+    (for {
+      i <- (1 to len-1).iterator
+      hash <- set.map(_.take(i)).distinct
+      newStr = hash.take(i) //+ "".padTo(len - i, ".").mkString
+    } yield newStr) //.take(maxSize + 1)
+  }
+
   def getQueryPlan(rq: RasterQuery, availableResolutions: List[Double]): QueryPlan = {
 
     // TODO: WCS: Improve this if possible
@@ -51,10 +61,22 @@ case class AccumuloRasterQueryPlanner(schema: RasterIndexSchema) extends Logging
     val res = getLexicodedResolution(rq.resolution, availableResolutions)
     println(s"RasterQueryPlanner: BBox: ${rq.bbox} has geohashes: $hashes, and has encoded Resolution: $res")
 
+    // Tricks:
+    //  Step 1: We will 'dot' our GeoHashes.
+
+    val dotted = shorten(hashes).toList.distinct
+
     val rows = hashes.map { gh =>
       // TODO: leverage the RasterIndexSchema to construct the range.
+      // Step 2:  We will pad our scan ranges for each GeoHash we are descending.
+      new org.apache.accumulo.core.data.Range(new Text(s"~$res~$gh"), new Text(s"~$res~$gh~"))
+    } ++ dotted.map { gh =>
       new org.apache.accumulo.core.data.Range(new Text(s"~$res~$gh"))
     }
+
+    println(s"Buckshot: Scanning with ranges: $rows")
+
+    // Between the two approaches, we get more 'bigger' tiles and we get more smaller tiles.
 
     // setup the RasterFilteringIterator
     val cfg = new IteratorSetting(9001, "raster-filtering-iterator", classOf[RasterFilteringIterator])
