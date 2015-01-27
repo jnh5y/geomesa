@@ -168,7 +168,7 @@ object RasterUtils {
 
       rescaleBufferedImage(resX, resY, mosaic, accumuloRasterRes)
       // Is any more scaling required?
-      mosaic
+      //mosaic
     }
   }
 
