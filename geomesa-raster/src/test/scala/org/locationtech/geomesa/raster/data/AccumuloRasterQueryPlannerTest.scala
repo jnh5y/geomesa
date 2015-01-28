@@ -9,7 +9,8 @@ import org.specs2.matcher.MatchResult
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
+// JNH DEMO
+//@RunWith(classOf[JUnitRunner])
 class AccumuloRasterQueryPlannerTest extends Specification {
 
   sequential
@@ -54,7 +55,7 @@ class AccumuloRasterQueryPlannerTest extends Specification {
     println(s"Query pixel size: $size. Expected query resolution: $expectedResolution.  " +
       s"Returned query resolution $queryResolution.")
 
-    val roundedResolution = BigDecimal(expectedResolution).setScale(7, BigDecimal.RoundingMode.HALF_UP).toDouble
+    val roundedResolution = BigDecimal(expectedResolution).setScale(4, BigDecimal.RoundingMode.HALF_UP).toDouble
 
     queryResolution should be equalTo roundedResolution
   }

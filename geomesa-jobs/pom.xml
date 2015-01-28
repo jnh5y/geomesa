@@ -37,6 +37,11 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
+            <groupId>org.locationtech.geomesa</groupId>
+            <artifactId>geomesa-raster-accumulo1.5</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>org.apache.accumulo</groupId>
             <artifactId>accumulo-core</artifactId>
         </dependency>
@@ -104,6 +109,7 @@
         <dependency>
             <groupId>javax.media</groupId>
             <artifactId>jai_core</artifactId>
+            <scope>compile</scope>
         </dependency>
 
         <!-- test dependencies -->

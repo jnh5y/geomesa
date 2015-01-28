@@ -16,8 +16,9 @@
 
 package org.locationtech.geomesa.raster.util
 
-import java.awt.image.{BufferedImage, Raster => JRaster, RenderedImage, WritableRaster}
+import java.awt.image.{BufferedImage, RenderedImage, WritableRaster, Raster => JRaster}
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
+import java.nio.ByteBuffer
 import java.util.{Hashtable => JHashtable}
 import javax.media.jai.remote.SerializableRenderedImage
 
@@ -30,8 +31,10 @@ import org.joda.time.DateTime
 import org.locationtech.geomesa.core.index.DecodedIndex
 import org.locationtech.geomesa.raster.data.{Raster, RasterQuery, RasterStore}
 import org.locationtech.geomesa.utils.geohash.{BoundingBox, GeoHash}
+import org.locationtech.geomesa.utils.stats.MethodProfiling
 import org.opengis.geometry.Envelope
 
+import scala.collection.mutable.ListBuffer
 import scala.reflect.runtime.universe._
 
 object RasterUtils {
@@ -52,11 +55,17 @@ object RasterUtils {
     val AUTHORIZATIONS      = "geomesa-tools.ingestraster.authorizations"
     val VISIBILITIES        = "geomesa-tools.ingestraster.visibilities"
     val FILE_PATH           = "geomesa-tools.ingestraster.path"
+    val HDFS_FILES          = "geomesa-tools.ingestraster.hdfs.files"
     val FORMAT              = "geomesa-tools.ingestraster.format"
     val TIME                = "geomesa-tools.ingestraster.time"
     val GEOSERVER_REG       = "geomesa-tools.ingestraster.geoserver.reg"
     val TABLE               = "geomesa-tools.ingestraster.table"
+    val WRITE_MEMORY        = "geomesa-tools.ingestraster.write.memory"
+    val WRITE_THREADS       = "geomesa-tools.ingestraster.write.threads"
+    val QUERY_THREADS       = "geomesa-tools.ingestraster.query.threads"
+    val SHARDS              = "geomesa-tools.ingestraster.shards"
     val PARLEVEL            = "geomesa-tools.ingestraster.parallel.level"
+    val IS_TEST_INGEST      = "geomesa.tools.ingestraster.is-test-ingest"
   }
 
   def imageSerialize(image: RenderedImage): Array[Byte] = {
@@ -219,14 +228,20 @@ object RasterUtils {
     bufferedResult
   }
 
+//<<<<<<< HEAD:geomesa-raster/src/main/scala/org/locationtech/geomesa/raster/util/RasterUtil.scala
   def envelopeToReferencedEnvelope(e: Envelope): ReferencedEnvelope = {
     new ReferencedEnvelope(e.getMinimum(0), e.getMaximum(0), e.getMinimum(1), e.getMaximum(1), CRS.decode("EPSG:4326"))
   }
 
   def mosaicRasters(rasters: Iterator[Raster], width: Int, height: Int,
-                    env: Envelope, resX: Double, resY: Double): BufferedImage = {
+                    env: Envelope, resX: Double, resY: Double): (BufferedImage, Int) = {
     if (rasters.isEmpty) {
-      getEmptyImage(width, height, BufferedImage.TYPE_BYTE_GRAY)
+      (getEmptyImage(width, height, BufferedImage.TYPE_BYTE_GRAY), 0)
+//=======
+//  def mosaicRasters(rasters: Iterator[Raster], width: Int, height: Int, env: Envelope, resX: Double, resY: Double): (BufferedImage, Int) = {
+//    if (rasters.isEmpty) {
+//      (getEmptyImage(width, height), 0)
+//>>>>>>> wip_rastermr:geomesa-raster/src/main/scala/org/locationtech/geomesa/raster/util/RasterUtils.scala
     } else {
       val rescaleX = resX / (env.getSpan(0) / width)
       val rescaleY = resY / (env.getSpan(1) / height)
@@ -235,13 +250,26 @@ object RasterUtils {
       val imageWidth = Math.max(Math.round(scaledWidth), 1).toInt
       val imageHeight = Math.max(Math.round(scaledHeight), 1).toInt
       val firstRaster = rasters.next()
+//<<<<<<< HEAD:geomesa-raster/src/main/scala/org/locationtech/geomesa/raster/util/RasterUtil.scala
       val mosaic = allocateBufferedImage(imageWidth, imageHeight, firstRaster.chunk)
       populateMosaic(mosaic, firstRaster, env, resX, resY)
+      var count = 1
       while (rasters.hasNext) {
         val raster = rasters.next()
         populateMosaic(mosaic, raster, env, resX, resY)
+
+//=======
+//      var count = 1
+//      val mosaic = getEmptyMosaic(imageWidth, imageHeight, firstRaster.chunk)
+//      setMosaicData(mosaic, firstRaster, env, resX, resY)
+//      while (rasters.hasNext) {
+//        val raster = rasters.next()
+//        setMosaicData(mosaic, raster, env, resX, resY)
+//        count += 1
+//>>>>>>> wip_rastermr:geomesa-raster/src/main/scala/org/locationtech/geomesa/raster/util/RasterUtils.scala
+        count +=1
       }
-      mosaic
+      (mosaic, count)
     }
   }
 
@@ -275,7 +303,7 @@ object RasterUtils {
 
   def generateQuery(minX: Double, maxX: Double, minY: Double, maxY: Double, res: Double = 10.0) = {
     val bb = BoundingBox(new ReferencedEnvelope(minX, maxX, minY, maxY, DefaultGeographicCRS.WGS84))
-    new RasterQuery(bb, res, None, None)
+    RasterQuery(bb, res, None, None)
   }
 
   def generateTestRaster(minX: Double, maxX: Double, minY: Double, maxY: Double,
@@ -287,7 +315,7 @@ object RasterUtils {
     val metadata = DecodedIndex(Raster.getRasterId("testRaster"), bbox.geom, Option(ingestTime.getMillis))
     val image = getNewImage(w, h, color)
     val coverage = imageToCoverage(image.getRaster, env, defaultGridCoverageFactory)
-    new Raster(coverage.getRenderedImage, metadata, res)
+    Raster(coverage.getRenderedImage, metadata, res)
   }
 
   def generateTestRasterFromBoundingBox(bbox: BoundingBox, w: Int = 256, h: Int = 256, res: Double = 10.0): Raster = {
@@ -305,5 +333,34 @@ object RasterUtils {
     val resY = (envelope.getMaximum(1) - envelope.getMinimum(1)) / height
     val suggestedQueryResolution = math.min(resX, resY)
   }
+
+  //Encode a list of byte arrays into one byte array using protocol: length | data
+  //Result is like: length[4 bytes], byte array, ... [length[4 bytes], byte array]
+  def encodeByteArrays(bas: List[Array[Byte]]): Array[Byte] =  {
+    val totalLength = bas.map(_.length).sum
+    val buffer = ByteBuffer.allocate(totalLength + 4 * bas.length)
+    bas.foreach{ ba => buffer.putInt(ba.length).put(ba) }
+    buffer.array
+  }
+
+  //Decode a byte array into a list of byte array using protocol: length | data
+  def decodeByteArrays(ba: Array[Byte]): List[Array[Byte]] = {
+    var pos = 0
+    val listBuf: ListBuffer[Array[Byte]] = new ListBuffer[Array[Byte]]()
+    while(pos + 4 <= ba.length) {
+      val length = ByteBuffer.wrap(ba, pos, 4).getInt
+      listBuf += ba.slice(pos + 4, pos + 4 + length)
+      pos = pos + 4 + length
+    }
+    listBuf.toList
+  }
+
+  val doubleSize = 8
+  def doubleToBytes(d: Double): Array[Byte] = {
+    val bytes = new Array[Byte](doubleSize)
+    ByteBuffer.wrap(bytes).putDouble(d)
+    bytes
+  }
+  def bytesToDouble(bs: Array[Byte]): Double = ByteBuffer.wrap(bs).getDouble
 }
 

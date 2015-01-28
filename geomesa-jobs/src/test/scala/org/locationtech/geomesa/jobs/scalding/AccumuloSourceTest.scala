@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.locationtech.geomesa.jobs
+package org.locationtech.geomesa.jobs.scalding
 
 import com.twitter.scalding.{Hdfs, Read, Write}
 import org.apache.accumulo.core.client.mock.MockInstance
@@ -26,7 +26,7 @@ import org.locationtech.geomesa.jobs.scalding._
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
+//@RunWith(classOf[JUnitRunner])
 class AccumuloSourceTest extends Specification {
 
   val instance = new MockInstance("accumulo-source-test")

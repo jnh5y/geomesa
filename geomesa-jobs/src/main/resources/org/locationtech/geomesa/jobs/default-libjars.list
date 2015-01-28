@@ -33,3 +33,6 @@ algebird
 jobs
 joda
 avro
+jai_core
+jai_codec
+mango

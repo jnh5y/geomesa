@@ -28,6 +28,10 @@ import org.locationtech.geomesa.utils.geohash.{GeoHash, GeohashUtils}
 
 case class QueryPlan(iterators: Seq[IteratorSetting], ranges: Seq[org.apache.accumulo.core.data.Range], cf: Seq[Text])
 
+object QueryPlan {
+  val fullTableScan = QueryPlan(Seq(), Seq(new org.apache.accumulo.core.data.Range()), Seq())
+}
+
 trait KeyPlanningFilter
 
 case object AcceptEverythingFilter extends KeyPlanningFilter
