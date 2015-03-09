@@ -34,6 +34,17 @@ import org.locationtech.geomesa.web.scalatra.{User, PkiAuthenticationSupport}
 import org.scalatra._
 import org.scalatra.servlet.{FileUploadSupport, MultipartConfig, SizeConstraintExceededException}
 
+// TODO:
+// Right now we cannot have GeoServer directly access a secured .gml endpoint
+// since the geoserver cert -- if it even tries to use one -- will not match
+// the cert of the uploading user.  ahulbert has suggested using wps instead
+// if using a servlet at all, which isn't a bad idea.
+//
+// There should be two wps processes
+// 1) geomesa:csv2xsd infers a schema from the uploaded csv data;
+//    the end user can just pass the head of their csv to minimize transfers
+// 2) geomesa:csvimport takes a schema as well as the csv data and converts
+//    csv records to SimpleFeatures on the fly for ingest
 class CSVEndpoint extends GeoMesaScalatraServlet with FileUploadSupport with Logging with PkiAuthenticationSupport {
 
   override val root: String = "csv"
