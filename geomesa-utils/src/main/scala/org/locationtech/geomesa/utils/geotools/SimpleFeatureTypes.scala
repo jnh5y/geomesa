@@ -33,6 +33,7 @@ import org.opengis.feature.simple.SimpleFeatureType
 import scala.collection.JavaConversions._
 import scala.util.Try
 import scala.util.parsing.combinator.JavaTokenParsers
+import scala.util.Try
 
 object SimpleFeatureTypes {
 
@@ -351,9 +352,6 @@ object SimpleFeatureTypes {
     val cardinality = Cardinality.UNKNOWN
 
     override def toAttribute: AttributeDescriptor = {
-      if (!(srid == 4326 || srid == -1)) {
-        throw new IllegalArgumentException(s"Invalid SRID '$srid'. Only 4326 is supported.")
-      }
       val b = new AttributeTypeBuilder()
       b.binding(clazz)
           .userData(OPT_INDEX, index)
