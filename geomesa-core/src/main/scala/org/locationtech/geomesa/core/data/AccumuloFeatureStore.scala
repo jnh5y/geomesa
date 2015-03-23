@@ -58,9 +58,7 @@ class AccumuloFeatureStore(val dataStore: AccumuloDataStore, val featureName: Na
         try {
           newFeature.setAttributes(feature.getAttributes)
           newFeature.getUserData.putAll(feature.getUserData)
-          if (visibility.isDefined) {
-            SecurityUtils.setFeatureVisibilities(newFeature, dataStore.writeVisibilities, visibility.get)
-          }
+          for (v <- visibility) { SecurityUtils.setFeatureVisibility(newFeature, v) }
         } catch {
           case ex: Exception =>
             throw new DataSourceException(s"Could not create ${featureName.getLocalPart} out of provided feature: ${feature.getID}", ex)

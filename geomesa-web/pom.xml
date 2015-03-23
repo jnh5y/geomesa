@@ -55,6 +55,7 @@
     <modules>
         <module>geomesa-web-core</module>
         <module>geomesa-web-csv</module>
+        <module>geomesa-web-data</module>
     </modules>
 
 </project>
