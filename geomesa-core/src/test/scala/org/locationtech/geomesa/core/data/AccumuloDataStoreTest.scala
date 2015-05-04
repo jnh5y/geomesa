@@ -1154,7 +1154,61 @@ class AccumuloDataStoreTest extends Specification {
       success
     }
 
-    "create key plan that uses STII Filter with bbox" in {
+    "Use IndexIterator when projecting to date/geom where the geometry is the whole world" in {
+      val sftName = "StidxExtraAttributeTest2"
+      val spec =
+        s"name:String:$OPT_INDEX_VALUE=true,dtg:Date:$OPT_INDEX_VALUE=true,*geom:Point:srid=4326,attr2:String"
+      val sft = createSchema(sftName, spec)
+
+      val builder = AvroSimpleFeatureFactory.featureBuilder(sft)
+      val features = (0 until 6).map { i =>
+        builder.set("geom", WKTUtils.read(s"POINT(45.0 4$i.0)"))
+        builder.set("dtg", s"2012-01-02T05:0$i:07.000Z")
+        builder.set("name", i.toString)
+        builder.set("attr2", "2-" + i.toString)
+        val sf = builder.buildFeature(i.toString)
+        sf.getUserData.update(Hints.USE_PROVIDED_FID, java.lang.Boolean.TRUE)
+        sf
+      }
+
+      val baseTime = features(0).getAttribute("dtg").asInstanceOf[Date].getTime
+
+      val fs = ds.getFeatureSource(sftName).asInstanceOf[AccumuloFeatureStore]
+      fs.addFeatures(new ListFeatureCollection(sft, features))
+
+      val query = new Query(sftName, ECQL.toFilter("BBOX(geom, -180, -90, 180, 90) AND " +
+        "dtg BETWEEN 2012-01-01T05:06:00.000Z AND 2012-01-02T05:05:00.000Z"),
+        Array("geom", "dtg"))
+      val reader = ds.getFeatureReader(sftName, query)
+
+      // verify that the IndexIterator is getting used
+      val explain = {
+        val out = new ExplainString
+        ds.explainQuery(sftName, query, out)
+        out.toString()
+      }
+      explain must contain(classOf[IndexIterator].getName)
+
+      println(s"  Explanation: \n$explain\n")
+
+      val read = SelfClosingIterator(reader).toList
+
+      read.foreach { f => println(s"Feature: ${f.getID} ${f.getAttribute("dtg")}") }
+
+      read.filter(query.getFilter.evaluate) must haveSize(5)     // JNH: Sanity check.
+
+      // verify that all the attributes came back
+      read must haveSize(5)
+      read.sortBy(_.getAttribute("dtg").toString).zipWithIndex.foreach { case (sf, i) =>
+        sf.getAttributeCount mustEqual 2
+        sf.getAttribute("name") must beNull
+        sf.getAttribute("geom") mustEqual WKTUtils.read(s"POINT(45.0 4$i.0)")
+        sf.getAttribute("dtg").asInstanceOf[Date].getTime mustEqual baseTime + i * 60000
+      }
+      success
+    }
+
+    "properly handle queries with spatial and temporal query components with the Index iterator" in {
       val sftName = "explainLargeBBOXTest1"
       val sft1 = createSchema(sftName)
       val filter = CQL.toFilter("bbox(geom, -100, -45, 100, 45)")
