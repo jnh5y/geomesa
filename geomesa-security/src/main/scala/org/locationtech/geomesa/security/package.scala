@@ -6,6 +6,8 @@ import javax.imageio.spi.ServiceRegistry
 import org.geotools.data.DataAccessFactory.Param
 import org.opengis.feature.simple.SimpleFeature
 
+import scala.languageFeature.implicitConversions._
+
 package object security {
   val authsParam =
     new Param(

@@ -28,6 +28,7 @@ import org.opengis.feature.simple.{SimpleFeature, SimpleFeatureType}
 
 import scala.collection.JavaConversions._
 
+import scala.languageFeature.implicitConversions._
 
 object BinaryOutputEncoder extends LazyLogging {
 
