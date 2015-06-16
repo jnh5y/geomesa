@@ -65,12 +65,13 @@ class FilterPackageObjectTest extends Specification with Logging {
     }
 
     "handle ANDs with multiple predicates" in {
-      //val filter = geomFilter && 1 && 2
-      val filter = 1 && geomFilter && 2
-      val (geoms, nongeoms) = partitionGeom(filter, sft)
-      println("passed")
-      geoms must haveLength(1)
-      nongeoms must haveLength(1)
+      val filters= Seq(1 && geomFilter && 2, 1 && 2 && geomFilter, geomFilter && 1 && 2)
+
+      forall(filters) { filter => 
+        val (geoms, nongeoms) = partitionGeom(filter, sft)
+        geoms must haveLength(1)
+        nongeoms must haveLength(2)
+      }
     }
   }
 
