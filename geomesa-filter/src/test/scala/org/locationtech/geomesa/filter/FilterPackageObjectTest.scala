@@ -33,6 +33,7 @@ class FilterPackageObjectTest extends Specification with Logging {
 
   "The partitionGeom function" should {
     val sft = SimpleFeatureTypes.createType("filterPackageTest", "g:Geometry,*geom:Geometry")
+    val geomFilter = ECQL.toFilter("BBOX(geom, -45.0,-45.0,45.0,45.0)")
 
     "filter bbox based on default geom" in {
       val filter = ECQL.toFilter("BBOX(geom, -45.0,-45.0,45.0,45.0) AND BBOX(g, -30.0,-30.0,30.0,30.0)")
@@ -61,6 +62,15 @@ class FilterPackageObjectTest extends Specification with Logging {
       nongeoms must haveLength(1)
       ECQL.toCQL(geoms(0)) mustEqual("INTERSECTS(POLYGON ((-45 -45, -45 45, 45 45, 45 -45, -45 -45)), geom)")
       ECQL.toCQL(nongeoms(0)) mustEqual("INTERSECTS(POLYGON ((-30 -30, -30 30, 30 30, 30 -30, -30 -30)), g)")
+    }
+
+    "handle ANDs with multiple predicates" in {
+      //val filter = geomFilter && 1 && 2
+      val filter = 1 && geomFilter && 2
+      val (geoms, nongeoms) = partitionGeom(filter, sft)
+      println("passed")
+      geoms must haveLength(1)
+      nongeoms must haveLength(1)
     }
   }
 
