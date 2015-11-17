@@ -43,15 +43,15 @@ import java.util.Random;
 *************************************************************************/
 
 public class AccumuloQuickStart {
-    static final String INSTANCE_ID = "instanceId";
-    static final String ZOOKEEPERS = "zookeepers";
-    static final String USER = "user";
-    static final String PASSWORD = "password";
-    static final String AUTHS = "auths";
-    static final String TABLE_NAME = "tableName";
+    public static final String INSTANCE_ID = "instanceId";
+    public static final String ZOOKEEPERS = "zookeepers";
+    public static final String USER = "user";
+    public static final String PASSWORD = "password";
+    public static final String AUTHS = "auths";
+    public static final String TABLE_NAME = "tableName";
 
     // sub-set of parameters that are used to create the Accumulo DataStore
-    static final String[] ACCUMULO_CONNECTION_PARAMS = new String[] {
+    public static final String[] ACCUMULO_CONNECTION_PARAMS = new String[] {
         INSTANCE_ID,
         ZOOKEEPERS,
         USER,
@@ -64,7 +64,7 @@ public class AccumuloQuickStart {
      * Creates a common set of command-line options for the parser.  Each option
      * is described separately.
      */
-    static Options getCommonRequiredOptions() {
+    public static Options getCommonRequiredOptions() {
         Options options = new Options();
 
         Option instanceIdOpt = OptionBuilder.withArgName(INSTANCE_ID)
@@ -111,7 +111,7 @@ public class AccumuloQuickStart {
         return options;
     }
 
-    static Map<String, String> getAccumuloDataStoreConf(CommandLine cmd) {
+    public static Map<String, String> getAccumuloDataStoreConf(CommandLine cmd) {
         Map<String , String> dsConf = new HashMap<String , String>();
         for (String param : ACCUMULO_CONNECTION_PARAMS) {
             dsConf.put(param, cmd.getOptionValue(param));
@@ -120,7 +120,7 @@ public class AccumuloQuickStart {
         return dsConf;
     }
 
-    static SimpleFeatureType createSimpleFeatureType(String simpleFeatureTypeName)
+    public static SimpleFeatureType createSimpleFeatureType(String simpleFeatureTypeName)
             throws SchemaException {
 
         // list the attributes that constitute the feature type
@@ -144,7 +144,7 @@ public class AccumuloQuickStart {
         return simpleFeatureType;
     }
 
-    static FeatureCollection createNewFeatures(SimpleFeatureType simpleFeatureType, int numNewFeatures) {
+    public static FeatureCollection createNewFeatures(SimpleFeatureType simpleFeatureType, int numNewFeatures) {
         DefaultFeatureCollection featureCollection = new DefaultFeatureCollection();
 
         String id;
@@ -194,7 +194,7 @@ public class AccumuloQuickStart {
         return featureCollection;
     }
 
-    static void insertFeatures(String simpleFeatureTypeName,
+    public static void insertFeatures(String simpleFeatureTypeName,
                                DataStore dataStore,
                                FeatureCollection featureCollection)
             throws IOException {
@@ -203,7 +203,7 @@ public class AccumuloQuickStart {
         featureStore.addFeatures(featureCollection);
     }
 
-    static Filter createFilter(String geomField, double x0, double y0, double x1, double y1,
+    public static Filter createFilter(String geomField, double x0, double y0, double x1, double y1,
                                String dateField, String t0, String t1,
                                String attributesQuery)
             throws CQLException, IOException {
@@ -228,7 +228,7 @@ public class AccumuloQuickStart {
         return CQL.toFilter(cql);
     }
 
-    static void queryFeatures(String simpleFeatureTypeName,
+    public static void queryFeatures(String simpleFeatureTypeName,
                               DataStore dataStore,
                               String geomField, double x0, double y0, double x1, double y1,
                               String dateField, String t0, String t1,
@@ -258,7 +258,7 @@ public class AccumuloQuickStart {
         featureItr.close();
     }
 
-    static void secondaryIndexExample(String simpleFeatureTypeName,
+    public static void secondaryIndexExample(String simpleFeatureTypeName,
                                       DataStore dataStore,
                                       String[] attributeFields,
                                       String attributesQuery,
