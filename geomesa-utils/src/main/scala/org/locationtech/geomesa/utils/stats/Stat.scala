@@ -19,7 +19,7 @@ object Stat {
 
   class StatParser extends RegexParsers {
 
-    val attributeName = "[^(),]*".r
+    val attributeName = """\w+""".r
 
     def minMaxParser: Parser[MinMax[_]] = {
       "MinMax(" ~> attributeName <~ ")" ^^ {
@@ -31,15 +31,23 @@ object Stat {
       "IteratorCount" ^^ { case _ => new IteratorStackCounter() }
     }
 
+    def enumeratedHistogramParser: Parser[EnumeratedHistogram[String]] = {
+      "Histogram(" ~> attributeName <~ ")" ^^ {
+        case attribute: String  => new EnumeratedHistogram[String](attribute)
+      }
+    }
+
     def statParser: Parser[Stat] = {
-      minMaxParser | iteratorStackParser
+      minMaxParser | iteratorStackParser | enumeratedHistogramParser
     }
 
-    def statsParser: Parser[Seq[Stat]] = {
-      rep1sep(statParser, ",")
+    def statsParser: Parser[Stat] = {
+      rep1sep(statParser, ",") ^^ {
+        case statParsers: Seq[Stat] => new SeqStat(statParsers)
+      }
     }
 
-    def parse(s: String): Seq[Stat] = {
+    def parse(s: String): Stat = {
       parseAll(statsParser, s) match {
         case Success(result, _) => result
         case failure: NoSuccess =>
