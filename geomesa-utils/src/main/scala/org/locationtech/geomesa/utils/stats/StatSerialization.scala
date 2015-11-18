@@ -1,3 +1,11 @@
+/***********************************************************************
+  * Copyright (c) 2013-2015 Commonwealth Computer Research, Inc.
+  * All rights reserved. This program and the accompanying materials
+  * are made available under the terms of the Apache License, Version 2.0 which
+  * accompanies this distribution and is available at
+  * http://www.opensource.org/licenses/apache2.0.php.
+  *************************************************************************/
+
 package org.locationtech.geomesa.utils.stats
 
 import java.nio.ByteBuffer
@@ -63,20 +71,23 @@ object StatSerialization {
     var pointer = 0
 
     // Loop begins
-    val kind = bytes(pointer)
-    val size = bb.getInt(pointer + 1)
+    while (pointer < totalSize - 1) {
 
-    kind match {
-      case MINMAX_BYTE =>
-        val stat = unpackMinMax(bytes.slice(pointer + 5, pointer + 5 + size))
-        returnStats += stat
-      case ISC_BYTE =>
-        val stat = unpackIteratorStackCounter(bytes.slice(pointer + 5, pointer + 5 + size))
-        returnStats += stat
+      val kind = bytes(pointer)
+      val size = bb.getInt(pointer + 1)
+
+      kind match {
+        case MINMAX_BYTE =>
+          val stat = unpackMinMax(bytes.slice(pointer + 5, pointer + 5 + size))
+          returnStats += stat
+        case ISC_BYTE =>
+          val stat = unpackIteratorStackCounter(bytes.slice(pointer + 5, pointer + 5 + size))
+          returnStats += stat
+      }
+
+      pointer += size + 5
+      // Loop Ends
     }
-
-    pointer += size + 6
-    // Loop Ends
 
     returnStats.size match {
       case 1 => returnStats.head

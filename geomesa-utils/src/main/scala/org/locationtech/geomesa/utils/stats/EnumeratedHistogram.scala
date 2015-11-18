@@ -1,10 +1,18 @@
+/***********************************************************************
+  * Copyright (c) 2013-2015 Commonwealth Computer Research, Inc.
+  * All rights reserved. This program and the accompanying materials
+  * are made available under the terms of the Apache License, Version 2.0 which
+  * accompanies this distribution and is available at
+  * http://www.opensource.org/licenses/apache2.0.php.
+  *************************************************************************/
+
 package org.locationtech.geomesa.utils.stats
 
 import org.opengis.feature.simple.SimpleFeature
 
 import scala.collection.mutable
 
-class EnumeratedHistogram[T](val attribute: String) extends Stat {
+case class EnumeratedHistogram[T](attribute: String) extends Stat {
 
   val map: scala.collection.mutable.HashMap[T, Long] = mutable.HashMap[T, Long]()
 
@@ -36,7 +44,6 @@ class EnumeratedHistogram[T](val attribute: String) extends Stat {
       case Some(long) => map.update(key, long + increment)
       case None       => map.update(key, increment)
     }
-
   }
 
   private def combine(eh: EnumeratedHistogram[T]): Unit =
