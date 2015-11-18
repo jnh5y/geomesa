@@ -49,8 +49,5 @@ class MinMax[T <: Comparable[T]](val attribute: String) extends Stat {
     }
   }
 
-
-  override def pack(): Array[Byte] = ???
-
   override def toJson(): String = s"$attribute: { min: $min, max: $max }"
 }

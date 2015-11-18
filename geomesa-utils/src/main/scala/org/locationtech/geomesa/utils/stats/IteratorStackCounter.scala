@@ -3,11 +3,9 @@ package org.locationtech.geomesa.utils.stats
 import org.opengis.feature.simple.SimpleFeature
 
 class IteratorStackCounter extends Stat {
-  var count = 1
+  var count: Long = 1
 
   override def observe(sf: SimpleFeature): Unit = { }
-
-  override def pack(): Array[Byte] = ???
 
   override def toJson(): String = ???
 

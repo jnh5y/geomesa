@@ -9,8 +9,6 @@ trait Stat {
   def add(other: Stat): Stat
 
   def toJson(): String
-
-  def pack(): Array[Byte]
 }
 
 

@@ -19,8 +19,6 @@ class EnumeratedHistogram[T](val attribute: String) extends Stat {
     }
   }
 
-  override def pack(): Array[Byte] = ???
-
   override def toJson(): String = {
     s"[${map.map{ case (key: T, count: Long) => s"$key:$count" }.mkString(",")}]"
   }
