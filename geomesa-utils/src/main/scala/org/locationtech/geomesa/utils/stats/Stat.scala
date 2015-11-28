@@ -12,9 +12,9 @@ import org.opengis.feature.simple.SimpleFeature
 
 import scala.util.parsing.combinator.RegexParsers
 
-trait Stat {
+trait Stat[T] {
   def observe(sf: SimpleFeature)
-  def add(other: Stat): Stat
+  def add(other: T): T
 
   def toJson(): String
 }
@@ -41,17 +41,17 @@ object Stat {
       }
     }
 
-    def statParser: Parser[Stat] = {
+    def statParser: Parser[Stat[_]] = {
       minMaxParser | iteratorStackParser | enumeratedHistogramParser
     }
 
-    def statsParser: Parser[Stat] = {
+    def statsParser: Parser[Stat[_]] = {
       rep1sep(statParser, ",") ^^ {
-        case statParsers: Seq[Stat] => new SeqStat(statParsers)
+        case statParsers: Seq[Stat[_]] => new SeqStat(statParsers)
       }
     }
 
-    def parse(s: String): Stat = {
+    def parse(s: String): Stat[_] = {
       parseAll(statsParser, s) match {
         case Success(result, _) => result
         case failure: NoSuccess =>

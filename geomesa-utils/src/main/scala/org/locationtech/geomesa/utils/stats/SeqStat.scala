@@ -9,19 +9,28 @@
 package org.locationtech.geomesa.utils.stats
 
 import org.opengis.feature.simple.SimpleFeature
+import shapeless.HList
 
-case class SeqStat(stats: Seq[Stat]) extends Stat {
+case class SeqStat(stats: Seq[Stat[_]]) extends Stat[SeqStat] {
   override def observe(sf: SimpleFeature): Unit = stats.foreach(_.observe(sf))
 
   // JNH: Does this work?  Or is it too quickly?
   override def toJson(): String = stats.map(_.toJson()).mkString(",")
 
   // JNH: revisit this.  Might need to deal with 'empty' stats or more bizarre situations
-  override def add(other: Stat): Stat = {
-    other match {
-      case ss: SeqStat =>
-        stats.zip(ss.stats).foreach { case (stat1, stat2) => stat1.add(stat2) }
+//  override def add(other: Stat): Stat = {
+//    other match {
+//      case ss: SeqStat =>
+//        stats.zip(ss.stats).foreach { case (stat1, stat2) => stat1.add(stat2) }
+//    }
+//    this
+//  }
+  override def add(other: SeqStat): SeqStat = {
+
+    stats.zip(other.stats) { case (stat1: Stat[T], stat2: Stat[T]) =>
+      stat1.add(stat2)
     }
+
     this
   }
 }

@@ -11,7 +11,7 @@ package org.locationtech.geomesa.utils.stats
 import org.opengis.feature.simple.SimpleFeature
 
 
-case class MinMax[T <: Comparable[T]](attribute: String) extends Stat {
+case class MinMax[T <: Comparable[T]](attribute: String) extends Stat[MinMax[T]] {
 
   var min: T = _
   var max: T = _
@@ -24,17 +24,6 @@ case class MinMax[T <: Comparable[T]](attribute: String) extends Stat {
       updateMin(sfval.asInstanceOf[T])
       updateMax(sfval.asInstanceOf[T])
     }
-  }
-
-  override def add(other: Stat): Stat = {
-
-    other match {
-      case mm: MinMax[T] =>
-        updateMin(mm.min)
-        updateMax(mm.max)
-    }
-
-    this
   }
 
   private def updateMin(sfval : T): Unit = {
@@ -58,4 +47,11 @@ case class MinMax[T <: Comparable[T]](attribute: String) extends Stat {
   }
 
   override def toJson(): String = s"$attribute: { min: $min, max: $max }"
+
+  override def add(mm: MinMax[T]): MinMax[T] = {
+    updateMin(mm.min)
+    updateMax(mm.max)
+
+    this
+  }
 }

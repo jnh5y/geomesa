@@ -50,18 +50,18 @@ object StatSerialization {
     stat
   }
 
-  def pack(stat: Stat): Array[Byte] = {
+  def pack(stat: Stat[_]): Array[Byte] = {
     // Uses individual pack m
     stat match {
       case mm: MinMax[_]             => packMinMax(mm)
       case isc: IteratorStackCounter => packISC(isc)
-      case seq: SeqStat              => Bytes.concat(seq.stats.map(pack) : _*)
+      //case seq: SeqStat              => Bytes.concat(seq.stats.map(pack) : _*)
     }
   }
 
-  def unpack(bytes: Array[Byte]): Stat = {
+  def unpack(bytes: Array[Byte]): Stat[_] = {
 
-    val returnStats: ArrayBuffer[Stat] = new mutable.ArrayBuffer[Stat]()
+    val returnStats: ArrayBuffer[Stat[_]] = new mutable.ArrayBuffer[Stat[_]]()
     var totalSize = bytes.length
     val bb = ByteBuffer.wrap(bytes)
 
@@ -87,7 +87,7 @@ object StatSerialization {
 
     returnStats.size match {
       case 1 => returnStats.head
-      case _ => new SeqStat(returnStats.toSeq)
+      //case _ => new SeqStat(returnStats.toSeq)
     }
   }
 }

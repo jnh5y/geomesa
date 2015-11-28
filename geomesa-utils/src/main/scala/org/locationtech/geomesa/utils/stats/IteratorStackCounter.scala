@@ -11,17 +11,15 @@ package org.locationtech.geomesa.utils.stats
 
 import org.opengis.feature.simple.SimpleFeature
 
-case class IteratorStackCounter extends Stat {
+case class IteratorStackCounter extends Stat[IteratorStackCounter] {
   var count: Long = 1
 
   override def observe(sf: SimpleFeature): Unit = { }
 
   override def toJson(): String = s"iteratorStackCount:$count"
 
-  override def add(other: Stat): Stat = {
-    other match {
-      case o: IteratorStackCounter => count += o.count
-    }
+  override def add(other: IteratorStackCounter): IteratorStackCounter = {
+    count += other.count
     this
   }
 }

@@ -12,7 +12,7 @@ import org.opengis.feature.simple.SimpleFeature
 
 import scala.collection.mutable
 
-case class EnumeratedHistogram[T](attribute: String) extends Stat {
+case class EnumeratedHistogram[T](attribute: String) extends Stat[EnumeratedHistogram[T]] {
 
   val map: scala.collection.mutable.HashMap[T, Long] = mutable.HashMap[T, Long]()
 
@@ -31,12 +31,9 @@ case class EnumeratedHistogram[T](attribute: String) extends Stat {
     s"[${map.map{ case (key: T, count: Long) => s"$key:$count" }.mkString(",")}]"
   }
 
-  override def add(other: Stat): Stat = {
-    other match {
-      case eh: EnumeratedHistogram[T] =>
-        combine(eh)
-        this
-    }
+  override def add(other: EnumeratedHistogram[T]): EnumeratedHistogram[T] = {
+    combine(other)
+    this
   }
 
   private def updateMap(key: T, increment: Long) = {
