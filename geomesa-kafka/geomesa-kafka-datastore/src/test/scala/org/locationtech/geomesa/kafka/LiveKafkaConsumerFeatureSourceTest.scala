@@ -14,17 +14,21 @@ import com.google.common.util.concurrent.AtomicLongMap
 import com.typesafe.scalalogging.LazyLogging
 import com.vividsolutions.jts.geom.{Coordinate, Point}
 import org.geotools.data._
+import org.geotools.data.simple.{SimpleFeatureStore, SimpleFeatureSource}
+import org.geotools.factory.CommonFactoryFinder
 import org.geotools.filter.identity.FeatureIdImpl
 import org.geotools.filter.text.ecql.ECQL
 import org.geotools.geometry.jts.JTSFactoryFinder
 import org.joda.time.DateTime
 import org.junit.runner.RunWith
+import org.locationtech.geomesa.utils.geotools.Conversions._
 import org.locationtech.geomesa.utils.geotools.SimpleFeatureTypes
 import org.opengis.filter.Filter
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 
 import scala.collection.JavaConversions._
+import scala.collection.mutable
 
 @RunWith(classOf[JUnitRunner])
 class LiveKafkaConsumerFeatureSourceTest extends Specification with HasEmbeddedKafka with LazyLogging {
@@ -155,13 +159,73 @@ class LiveKafkaConsumerFeatureSourceTest extends Specification with HasEmbeddedK
       }
 
       logger.debug("Wrote feature")
-      while(latch.getCount > 0) {
+//      while(latch.getCount > 0) {
         Thread.sleep(100)
-      }
+//      }
 
       logger.debug("getting id")
       m.get(id) must be equalTo numUpdates
       latestLon must be equalTo 0.0
+    }
+
+    "handle multiple consumers starting in-between CRUD messages" >> {
+      val ff = CommonFactoryFinder.getFilterFactory2
+      val sftName = "concurrent"
+      val wait    = 500
+
+      val sft = {
+        val sft = SimpleFeatureTypes.createType(sftName, "name:String,age:Int,dtg:Date,*geom:Point:srid=4326")
+        KafkaDataStoreHelper.createStreamingSFT(sft, zkPath)
+      }
+      val producerDS = DataStoreFinder.getDataStore(producerParams)
+      producerDS.createSchema(sft)
+      val producerFS = producerDS.getFeatureSource(sftName).asInstanceOf[SimpleFeatureStore]
+
+      val fw = producerDS.getFeatureWriter(sftName, null, Transaction.AUTO_COMMIT)
+
+      def writeUpdate(x: Double, y: Double, name: String, age: Int, id: String) = {
+        Thread.sleep(wait)
+        val sf = fw.next()
+        sf.getIdentifier.asInstanceOf[FeatureIdImpl].setID(id)
+        sf.setAttributes(Array(name, age, DateTime.now().toDate).asInstanceOf[Array[AnyRef]])
+        sf.setDefaultGeometry(gf.createPoint(new Coordinate(x, y)))
+        fw.write()
+        Thread.sleep(wait)
+      }
+
+      def deleteById(id: String) = {
+        Thread.sleep(wait)
+        producerFS.removeFeatures(ff.id(ff.featureId(id)))
+        Thread.sleep(wait)
+      }
+
+      val listenerConsumerDS = DataStoreFinder.getDataStore(consumerParams)
+      val consumers = mutable.ListBuffer[SimpleFeatureSource]()
+
+      def addConsumer()  {
+        consumers += listenerConsumerDS.getFeatureSource(sftName)
+        logger.info("Got a new Consumer")
+      }
+
+      def checkConsumers[T](check: (SimpleFeatureSource) => T) = {
+        Thread.sleep(wait)
+        println(s"Size of consumers = ${consumers.size}")
+        consumers.map { check }
+      }
+
+      addConsumer
+      writeUpdate(0.0, 0.0, "James", 33, "1")
+      checkConsumers {_.getFeatures().features().toList.size must equalTo(1) }
+
+      addConsumer
+      deleteById("1")
+      checkConsumers {_.getFeatures().features().toList.size must equalTo(0) }
+
+      addConsumer
+      writeUpdate(1.0, -1.0, "Mark", 27, "2")
+      checkConsumers {_.getFeatures().features().toList.size must equalTo(1) }
+
+
     }
   }
 
