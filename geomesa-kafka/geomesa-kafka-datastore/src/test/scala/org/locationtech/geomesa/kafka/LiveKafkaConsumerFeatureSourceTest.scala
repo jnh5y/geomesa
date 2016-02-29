@@ -202,8 +202,23 @@ class LiveKafkaConsumerFeatureSourceTest extends Specification with HasEmbeddedK
       val listenerConsumerDS = DataStoreFinder.getDataStore(consumerParams)
       val consumers = mutable.ListBuffer[SimpleFeatureSource]()
 
+      val fl = new FeatureListener {
+        override def changed(featureEvent: FeatureEvent): Unit = {
+        println(s"Got message. ${featureEvent.getType} with filter ${featureEvent.getFilter}")
+
+    featureEvent match {
+      case kfe: KafkaFeatureEvent =>
+        //lambda(kfe)
+      case _ =>
+        //logger.debug(s"Received event ${featureEvent.getType}: ${featureEvent.toString}.")
+    }
+  }
+      }
+
       def addConsumer()  {
-        consumers += listenerConsumerDS.getFeatureSource(sftName)
+        val newfs = listenerConsumerDS.getFeatureSource(sftName)
+        newfs.addFeatureListener(fl);
+        consumers += newfs 
         logger.info("Got a new Consumer")
       }
 
@@ -213,7 +228,11 @@ class LiveKafkaConsumerFeatureSourceTest extends Specification with HasEmbeddedK
         consumers.map { check }
       }
 
+
+      deleteById("1")
+
       addConsumer
+      deleteById("2")
       writeUpdate(0.0, 0.0, "James", 33, "1")
       checkConsumers {_.getFeatures().features().toList.size must equalTo(1) }
 
@@ -224,8 +243,6 @@ class LiveKafkaConsumerFeatureSourceTest extends Specification with HasEmbeddedK
       addConsumer
       writeUpdate(1.0, -1.0, "Mark", 27, "2")
       checkConsumers {_.getFeatures().features().toList.size must equalTo(1) }
-
-
     }
   }
 

@@ -126,6 +126,7 @@ class LiveKafkaConsumerFeatureSource(entry: ContentEntry,
 
   override def run(): Unit =
     while (running.get) {
+try {
       queue.take() match {
         case update: CreateOrUpdate =>
           fireEvent(KafkaFeatureEvent.changed(this, update.feature))
@@ -138,6 +139,11 @@ class LiveKafkaConsumerFeatureSource(entry: ContentEntry,
           featureCache.clear()
         case m                      => throw new IllegalArgumentException(s"Unknown message: $m")
       }
+
+} catch {
+  case t: Throwable => println(s"*** Caught:  ${t.toString}")
+}
+
     }
 
   // optimized for filter.include
