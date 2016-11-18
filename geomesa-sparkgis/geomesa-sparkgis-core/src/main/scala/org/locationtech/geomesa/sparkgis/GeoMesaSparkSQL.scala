@@ -112,7 +112,7 @@ object SparkUtils {
     log.debug(s"compiledCQL = $compiledCQL")
 
     val requiredAttributes = requiredColumns.filterNot(_ == "__fid__")
-    val rdd = GeoMesaSpark.rdd(
+    val rdd = GeoMesaSpark(params).rdd(
       new Configuration(), ctx, params,
       new Query(params("geomesa.feature"), compiledCQL, requiredAttributes),
       Try(params("useMock").toBoolean).getOrElse(false), Option.empty[Int])

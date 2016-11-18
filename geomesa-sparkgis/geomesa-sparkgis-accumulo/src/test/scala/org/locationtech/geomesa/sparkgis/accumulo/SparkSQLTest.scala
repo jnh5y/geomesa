@@ -1,4 +1,4 @@
-package org.locationtech.geomesa.sparkgis
+package org.locationtech.geomesa.sparkgis.accumulo
 
 import java.nio.file.Files
 

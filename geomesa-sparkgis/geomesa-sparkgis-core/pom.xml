@@ -39,18 +39,6 @@
             <artifactId>geomesa-utils_2.11</artifactId>
         </dependency>
 
-        <!-- test dependencies -->
-        <dependency>
-            <groupId>org.locationtech.geomesa</groupId>
-            <artifactId>geomesa-accumulo-datastore_2.11</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.accumulo</groupId>
-            <artifactId>accumulo-minicluster</artifactId>
-            <version>${accumulo.version}</version>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
 
