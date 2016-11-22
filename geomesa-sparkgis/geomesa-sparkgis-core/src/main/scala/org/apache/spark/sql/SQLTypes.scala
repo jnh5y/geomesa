@@ -2,6 +2,7 @@ package org.apache.spark.sql
 
 import com.vividsolutions.jts.geom._
 import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.analysis.FunctionRegistry
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan}
@@ -42,6 +43,8 @@ object SQLTypes {
   val ST_CastToPolygon:    Geometry => Polygon     = g => g.asInstanceOf[Polygon]
   val ST_CastToLineString: Geometry => LineString  = g => g.asInstanceOf[LineString]
 
+
+
   // TODO: optimize when used as a literal
   // e.g. select * from feature where st_contains(geom, geomFromText('POLYGON((....))'))
   // should not deserialize the POLYGON for every call
@@ -56,6 +59,7 @@ object SQLTypes {
     sqlContext.udf.register("st_makeBBOX"      , ST_MakeBBOX)
     sqlContext.udf.register("st_centroid"      , ST_Centroid)
     sqlContext.udf.register("st_castToPoint"   , ST_CastToPoint)
+
   }
 
   // new AST expressions
@@ -81,6 +85,7 @@ object SQLTypes {
     }
 
     override def apply(plan: LogicalPlan): LogicalPlan = {
+      println("HERE!")
       plan.transform {
         case filt @ Filter(f, lr@LogicalRelation(gmRel: GeoMesaRelation, _, _)) =>
           // TODO: deal with `or`
@@ -96,7 +101,7 @@ object SQLTypes {
 
             // TODO: only dealing with one st_contains at the moment
             val ScalaUDF(_, _, Seq(_, GeometryLiteral(_, geom)), _) = st_contains.head
-            log.debug("Optimizing 'st_contains'")
+            log.warn("Optimizing 'st_contains'")
             val geomDescriptor = gmRel.sft.getGeometryDescriptor.getLocalName
             val cqlFilter = ff.within(ff.property(geomDescriptor), ff.literal(geom))
             val relation = gmRel.copy(filt = ff.and(gmRel.filt, cqlFilter))
@@ -107,6 +112,7 @@ object SQLTypes {
               Filter(xs.reduce(And), newrel)
             } else {
               // if st_contains was the only filter, just return the new relation
+              // JNH: I don't believe this should type check.
               newrel
             }
           } else {
@@ -146,6 +152,7 @@ object SQLTypes {
   }
 }
 
+//@SQLUserDefinedType
 private [spark] class PointUDT extends UserDefinedType[Point] {
 
   override def simpleString: String = "point"
@@ -172,6 +179,7 @@ private [spark] class PointUDT extends UserDefinedType[Point] {
 
 object PointUDT extends PointUDT
 
+//@SQLUserDefinedType(LineStringUDT)
 private [spark] class LineStringUDT extends UserDefinedType[LineString] {
 
   override def sqlType: DataType = StructType(
@@ -199,6 +207,7 @@ private [spark] class LineStringUDT extends UserDefinedType[LineString] {
 
 object LineStringUDT extends LineStringUDT
 
+//@SQLUserDefinedType
 private [spark] class PolygonUDT extends UserDefinedType[Polygon] {
 
   override def sqlType: DataType = StructType(
@@ -236,6 +245,7 @@ private [spark] class PolygonUDT extends UserDefinedType[Polygon] {
 
 object PolygonUDT extends PolygonUDT
 
+//@SQLUserDefinedType
 private [spark] class GeometryUDT extends UserDefinedType[Geometry] {
 
 

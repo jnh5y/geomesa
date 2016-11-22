@@ -10,9 +10,10 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types.{DataTypes, StructField, StructType}
-import org.apache.spark.sql.{Row, SQLContext, SQLTypes}
+import org.apache.spark.sql._
 import org.geotools.data.{DataStoreFinder, Query}
 import org.geotools.factory.CommonFactoryFinder
+import org.geotools.feature.simple.{SimpleFeatureBuilder, SimpleFeatureTypeBuilder}
 import org.opengis.feature.`type`._
 import org.opengis.feature.simple.{SimpleFeature, SimpleFeatureType}
 
@@ -32,7 +33,7 @@ import scala.util.Try
 //   .option("geomesa.feature", "chicago")
 //   .load()
 // }}
-class GeoMesaDataSource extends DataSourceRegister with RelationProvider with SchemaRelationProvider {
+class GeoMesaDataSource extends DataSourceRegister with RelationProvider with SchemaRelationProvider with CreatableRelationProvider {
 
   override def shortName(): String = "geomesa"
 
@@ -44,6 +45,7 @@ class GeoMesaDataSource extends DataSourceRegister with RelationProvider with Sc
     new GeoMesaRelation(sqlContext, sft, schema, parameters)
   }
 
+  // JNH: Q: Why doesn't this method have the call to SQLTypes.init(sqlContext)?
   override def createRelation(sqlContext: SQLContext, parameters: Map[String, String], schema: StructType): BaseRelation = {
     val ds = DataStoreFinder.getDataStore(parameters)
     val sft = ds.getSchema(parameters("geomesa.feature"))
@@ -55,6 +57,43 @@ class GeoMesaDataSource extends DataSourceRegister with RelationProvider with Sc
     StructType(StructField("__fid__", DataTypes.StringType, nullable =false) :: fields)
   }
 
+  def structType2SFT(struct: StructType, name: String): SimpleFeatureType = {
+    import java.{lang => jl}
+    val fields = struct.fields
+
+    val builder = new SimpleFeatureTypeBuilder
+
+    fields.filter( _.name != "__fid__").foreach {
+      field =>
+        field.dataType match {
+          case DataTypes.BooleanType => builder.add(field.name, classOf[jl.Boolean])
+          case DataTypes.DateType => builder.add(field.name, classOf[java.util.Date])
+          case DataTypes.FloatType => builder.add(field.name, classOf[jl.Float])
+          case DataTypes.IntegerType => builder.add(field.name, classOf[jl.Integer])
+          case DataTypes.DoubleType => builder.add(field.name, classOf[jl.Double])
+          case DataTypes.StringType => builder.add(field.name, classOf[jl.String])
+
+          case SQLTypes.PointType => builder.add(field.name, classOf[com.vividsolutions.jts.geom.Point])
+          case SQLTypes.LineStringType => builder.add(field.name, classOf[com.vividsolutions.jts.geom.LineString])
+          case SQLTypes.GeometryType => builder.add(field.name, classOf[com.vividsolutions.jts.geom.Geometry])
+        }
+    }
+    builder.setName(name)
+    builder.buildFeatureType()
+  }
+
+  def row2Sf(sft: SimpleFeatureType, row: Row): SimpleFeature = {
+    val builder = new SimpleFeatureBuilder(sft)
+
+    val descriptorNames = sft.getAttributeDescriptors.map(_.getLocalName)
+
+    row.getValuesMap(descriptorNames.toList).foreach { case (field, value) =>
+      builder.set(field, value)
+    }
+    val fid = row.getAs[String]("__fid__")
+    builder.buildFeature(fid)
+  }
+
   private def ad2field(ad: AttributeDescriptor): StructField = {
     import java.{lang => jl}
     val dt = ad.getType.getBinding match {
@@ -64,11 +103,30 @@ class GeoMesaDataSource extends DataSourceRegister with RelationProvider with Sc
       case t if t == classOf[jl.String]                       => DataTypes.StringType
       case t if t == classOf[jl.Boolean]                      => DataTypes.BooleanType
       case t if      classOf[Geometry].isAssignableFrom(t)    => SQLTypes.PointType
+        // JNH: Add Geometry types here.
       case t if t == classOf[java.util.Date]                  => DataTypes.TimestampType
       case _                                                  => null
     }
     StructField(ad.getLocalName, dt)
   }
+
+  override def createRelation(sqlContext: SQLContext, mode: SaveMode, parameters: Map[String, String], data: DataFrame): BaseRelation = {
+    println("In createRelation with map " + parameters)
+    val newFeatureName: String = parameters("geomesa.feature")
+    val sft: SimpleFeatureType = structType2SFT(data.schema, newFeatureName)
+
+    val ds = DataStoreFinder.getDataStore(parameters)
+    println(s"Creating SFT: $sft")
+    sft.getUserData.put("override.reserved.words", java.lang.Boolean.TRUE)
+    ds.createSchema(sft)
+
+    val rddToSave: RDD[SimpleFeature] = data.rdd.map( r => row2Sf(sft, r))
+    GeoMesaSpark(parameters).save(rddToSave, parameters, newFeatureName)
+
+    GeoMesaRelation(sqlContext, sft, data.schema, parameters)
+  }
+
+
 }
 
 
@@ -107,9 +165,9 @@ object SparkUtils {
                 ctx: SparkContext,
                 schema: StructType,
                 params: Map[String, String]): RDD[Row] = {
-    log.debug(s"""Building scan, filt = $filt, filters = ${filters.mkString(",")}, requiredColumns = ${requiredColumns.mkString(",")}""")
+    log.warn(s"""Building scan, filt = $filt, filters = ${filters.mkString(",")}, requiredColumns = ${requiredColumns.mkString(",")}""")
     val compiledCQL = filters.flatMap(sparkFilterToCQLFilter).foldLeft[org.opengis.filter.Filter](filt) { (l, r) => ff.and(l,r) }
-    log.debug(s"compiledCQL = $compiledCQL")
+    log.warn(s"compiledCQL = $compiledCQL")
 
     val requiredAttributes = requiredColumns.filterNot(_ == "__fid__")
     val rdd = GeoMesaSpark(params).rdd(
@@ -119,6 +177,7 @@ object SparkUtils {
 
     type EXTRACTOR = SimpleFeature => AnyRef
     val IdExtractor: SimpleFeature => AnyRef = sf => sf.getID
+
     // the SFT attributes do not have the __fid__ so we have to translate accordingly
     val extractors: Array[EXTRACTOR] = requiredColumns.map {
       case "__fid__" => IdExtractor

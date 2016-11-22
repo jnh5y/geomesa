@@ -23,9 +23,6 @@ import org.opengis.filter.Filter
 
 import scala.collection.JavaConversions._
 
-/**
-  * Created by afox on 11/18/16.
-  */
 class SparkGISAccumuloProvider extends SparkGISProvider {
   override def canProcess(params: java.util.Map[String, java.io.Serializable]): Boolean =
     AccumuloDataStoreFactory.canProcess(params)
@@ -44,6 +41,9 @@ class SparkGISAccumuloProvider extends SparkGISProvider {
           query: Query,
           useMock: Boolean = false,
           numberOfSplits: Option[Int] = None): RDD[SimpleFeature] = {
+
+    println(s"\n\n*** Setting up RDD with Filter: ${query.getFilter} *** \n\n")
+
     val ds = DataStoreFinder.getDataStore(dsParams).asInstanceOf[AccumuloDataStore]
     val username = AccumuloDataStoreParams.userParam.lookUp(dsParams).toString
     val password = new PasswordToken(AccumuloDataStoreParams.passwordParam.lookUp(dsParams).toString.getBytes)

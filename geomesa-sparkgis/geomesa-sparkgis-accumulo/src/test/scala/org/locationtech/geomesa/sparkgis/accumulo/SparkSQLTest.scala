@@ -2,9 +2,9 @@ package org.locationtech.geomesa.sparkgis.accumulo
 
 import java.nio.file.Files
 
-import com.vividsolutions.jts.geom.Coordinate
+import com.vividsolutions.jts.geom.{Coordinate, Geometry}
 import org.apache.accumulo.minicluster.{MiniAccumuloCluster, MiniAccumuloConfig}
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.geotools.data.simple.SimpleFeatureStore
 import org.geotools.data.{DataStoreFinder, DataUtilities}
 import org.geotools.geometry.jts.JTSFactoryFinder
@@ -13,6 +13,7 @@ import org.locationtech.geomesa.accumulo.AccumuloProperties.AccumuloQueryPropert
 import org.locationtech.geomesa.accumulo.data.{AccumuloDataStore, AccumuloDataStoreParams => GM}
 import org.locationtech.geomesa.features.ScalaSimpleFeature
 import org.locationtech.geomesa.index.conf.QueryProperties
+import org.locationtech.geomesa.sparkgis.GeoMesaDataSource
 import org.locationtech.geomesa.utils.geotools.SimpleFeatureTypes
 
 import scala.collection.JavaConversions._
@@ -61,7 +62,7 @@ object SparkSQLTest extends App {
 
   val spark = SparkSession.builder().master("local[*]").getOrCreate()
 
-  val df = spark.read
+  val df: DataFrame = spark.read
     .format("geomesa")
     .option(GM.instanceIdParam.getName, instanceName)
     .option(GM.userParam.getName, "root")
@@ -76,6 +77,8 @@ object SparkSQLTest extends App {
 
   df.createOrReplaceTempView("chicago")
 
+  println(s"*** Length of DF:  ${df.collect().length}")
+
   import spark.sqlContext.{sql => $}
 
   //$("select * from chicago where (dtg >= cast('2016-01-01' as timestamp) and dtg <= cast('2016-02-01' as timestamp))").show()
@@ -87,19 +90,37 @@ object SparkSQLTest extends App {
 
 //  $("select arrest,case_number,geom from chicago limit 5").show()
 
+  //select  arrest, geom, st_centroid(st_geomFromWKT('POLYGON((-78 37,-76 37,-76 39,-78 39,-78 37))'))
   $("""
-      |select  arrest,geom
+      |select  arrest, geom
       |from    chicago
       |where
       |  st_contains(geom, st_geomFromWKT('POLYGON((-78 37,-76 37,-76 39,-78 39,-78 37))'))
       |  and dtg >= cast('2015-12-31' as timestamp) and dtg <= cast('2016-01-07' as timestamp)
     """.stripMargin).show()
+//  and dtg >= cast('2015-12-31' as timestamp) and dtg <= cast('2016-01-07' as timestamp)
 
 
-  val res = $(
+  val res: DataFrame = $(
     """
       |select __fid__ as id,arrest,geom from chicago
     """.stripMargin)
+
+  val results = res.collect()
+  results.length
+  res.show(false)
+
+  res.write
+    .format("geomesa")
+    .option(GM.instanceIdParam.getName, instanceName)
+    .option(GM.userParam.getName, "root")
+    .option(GM.passwordParam.getName, "password")
+    .option(GM.tableNameParam.getName, "sparksql")
+    .option(GM.zookeepersParam.getName, mac.getZooKeepers)
+    .option("geomesa.feature", "chicago2")
+    .save()
+
+  println(s"After the save: ${ds.getTypeNames}")
 
 /*
   res.show()
@@ -111,10 +132,18 @@ object SparkSQLTest extends App {
     .select("id").show()
 */
 
-/*
-  $(
+
+  val dataset = $(
     """
       |select st_makeBox2D(ll,ur) as bounds from (select p[0] as ll,p[1] as ur from (select collect_list(geom) as p from chicago group by arrest))
-    """.stripMargin).show()
-*/
+    """.stripMargin)
+
+
+  dataset.show(false)
+  val bounds = dataset.collect.map {
+    case Row(bounds: Geometry) => println("Got geometry")
+      bounds
+  }.apply(0)
+  println(s"Bounds = $bounds")
+
 }
