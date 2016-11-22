@@ -120,7 +120,7 @@ object SparkSQLTest extends App {
     .option("geomesa.feature", "chicago2")
     .save()
 
-  println(s"After the save: ${ds.getTypeNames}")
+  println(s"After the save: ${ds.getTypeNames.mkString(", ")}")
 
 /*
   res.show()

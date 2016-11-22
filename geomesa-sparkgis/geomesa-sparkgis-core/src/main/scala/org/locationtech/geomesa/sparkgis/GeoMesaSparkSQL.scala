@@ -1,9 +1,9 @@
 package org.locationtech.geomesa.sparkgis
 
 import java.sql.Timestamp
-import java.util.Date
+import java.util.{Date, UUID}
 
-import com.vividsolutions.jts.geom.Geometry
+import com.vividsolutions.jts.geom.{Geometry, Point}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
@@ -82,17 +82,7 @@ class GeoMesaDataSource extends DataSourceRegister with RelationProvider with Sc
     builder.buildFeatureType()
   }
 
-  def row2Sf(sft: SimpleFeatureType, row: Row): SimpleFeature = {
-    val builder = new SimpleFeatureBuilder(sft)
 
-    val descriptorNames = sft.getAttributeDescriptors.map(_.getLocalName)
-
-    row.getValuesMap(descriptorNames.toList).foreach { case (field, value) =>
-      builder.set(field, value)
-    }
-    val fid = row.getAs[String]("__fid__")
-    builder.buildFeature(fid)
-  }
 
   private def ad2field(ad: AttributeDescriptor): StructField = {
     import java.{lang => jl}
@@ -119,8 +109,16 @@ class GeoMesaDataSource extends DataSourceRegister with RelationProvider with Sc
     println(s"Creating SFT: $sft")
     sft.getUserData.put("override.reserved.words", java.lang.Boolean.TRUE)
     ds.createSchema(sft)
+//
+//    val rddToSave: RDD[SimpleFeature] = data.rdd.map( r => SparkUtils.row2Sf(sft, r))
+//
+    val rddToSave: RDD[SimpleFeature] = data.rdd.mapPartitions( iterRow => {
+      val innerDS = DataStoreFinder.getDataStore(parameters)
+      val sft = innerDS.getSchema(newFeatureName)
+      val func: (Row) => SimpleFeature = SparkUtils.row2Sf(sft, _)
+      iterRow.map(func)
+    })
 
-    val rddToSave: RDD[SimpleFeature] = data.rdd.map( r => row2Sf(sft, r))
     GeoMesaSpark(parameters).save(rddToSave, parameters, newFeatureName)
 
     GeoMesaRelation(sqlContext, sft, data.schema, parameters)
@@ -222,6 +220,40 @@ object SparkUtils {
   def toSparkType(v: Any): AnyRef = v match {
     case t: Date => new Timestamp(t.getTime)
     case t       => t.asInstanceOf[AnyRef]
+  }
+
+  // JNH: Fix this.  Seriously.
+  def row2Sf(sft: SimpleFeatureType, row: Row): SimpleFeature = {
+    val builder = new SimpleFeatureBuilder(sft)
+
+    sft.getAttributeDescriptors.foreach {
+      ad =>
+        val name = ad.getLocalName
+        val binding = ad.getType.getBinding
+
+        if (binding == classOf[java.lang.String]) {
+          builder.set(name, row.getAs[String](name))
+        } else if (binding == classOf[java.lang.Double]) {
+          builder.set(name, row.getAs[Double](name))
+        } else if (binding == classOf[com.vividsolutions.jts.geom.Point]) {
+          builder.set(name, row.getAs[Point](name))
+        } else {
+          println(s"UNHANDLED BINDING: $binding")
+        }
+    }
+
+//    val descriptorNames: scala.collection.mutable.Buffer[String] = sft.getAttributeDescriptors.map(_.getLocalName)
+//
+//    row.getValuesMap(descriptorNames).foreach {
+//      case (field, value) =>
+//        val f: String = field
+//        val v: Any = value
+//        builder.set(field, value)
+//    }
+
+//    val fid = row.getAs[String]("__fid__")
+    // JNH: DERP
+    builder.buildFeature(UUID.randomUUID().toString)
   }
 
 }
