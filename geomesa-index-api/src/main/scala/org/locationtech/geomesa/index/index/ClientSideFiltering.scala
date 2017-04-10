@@ -93,6 +93,7 @@ trait ClientSideFiltering[R] {
     val deserializer = new KryoFeatureSerializer(sft, SerializationOptions.withoutId)
     (result) => {
       val RowAndValue(row, rowOffset, rowLength, value, valueOffset, valueLength) = rowAndValue(result)
+      println(s"value $valueOffset $valueLength ${value.size}")
       val sf = deserializer.deserialize(value, valueOffset, valueLength)
       val id = getId(row, rowOffset, rowLength)
       sf.getIdentifier.asInstanceOf[FeatureIdImpl].setID(id)

@@ -9,6 +9,7 @@
 package org.locationtech.geomesa.hbase.filters;
 
 import org.apache.hadoop.hbase.Cell;
+import org.apache.hadoop.hbase.CellUtil;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.exceptions.DeserializationException;
 import org.apache.hadoop.hbase.filter.FilterBase;
@@ -97,7 +98,16 @@ public class JSimpleFeatureFilter extends FilterBase {
     @Override
     public Cell transformCell(Cell v) throws IOException {
         if(hasTransform) {
-            return new KeyValue(reusableSf.transform());
+            byte[] arr = v.getValue();
+            System.out.println("Len " + arr.length + " Array " + new String(arr));
+            reusableSf.setBuffer(v.getValue());
+            byte[] tran =  reusableSf.transform();
+            System.out.println("Attribute " + reusableSf.getAttribute("geom"));
+            System.out.println("Len " + tran.length + " Array " + new String(tran));
+
+            return CellUtil.createCell(v.getRow(), v.getFamily(), v.getQualifier(), v.getTimestamp(), v.getTypeByte(), tran);
+
+            //return new KeyValue(tran);
         } else {
             return super.transformCell(v);
         }
@@ -106,7 +116,7 @@ public class JSimpleFeatureFilter extends FilterBase {
     // TODO: Add static method to compute byte array from SFT and Filter.
     @Override
     public byte[] toByteArray() throws IOException {
-        return Bytes.add(getLengthArray(sftString), getLengthArray(filterString));
+        return Bytes.add(Bytes.add(getLengthArray(sftString), getLengthArray(filterString), getLengthArray(transform)), getLengthArray(transformSchema));
     }
 
     private byte[] getLengthArray(String s) {
@@ -133,6 +143,12 @@ public class JSimpleFeatureFilter extends FilterBase {
         int filterLen = Bytes.readAsInt(pbBytes, sftLen + 4, 4);
         String filterString = new String(Bytes.copy(pbBytes, sftLen + 8, filterLen));
 
-        return new JSimpleFeatureFilter(sftString, filterString, null, null);
+        int transformLen = Bytes.readAsInt(pbBytes, sftLen + 4, 4);
+        String transformString = new String(Bytes.copy(pbBytes, sftLen + 8, filterLen));
+
+        int transformSchemaLen = Bytes.readAsInt(pbBytes, sftLen + 4, 4);
+        String transformSchemaString = new String(Bytes.copy(pbBytes, sftLen + 8, filterLen));
+
+        return new JSimpleFeatureFilter(sftString, filterString, transformString, transformSchemaString);
     }
 }
