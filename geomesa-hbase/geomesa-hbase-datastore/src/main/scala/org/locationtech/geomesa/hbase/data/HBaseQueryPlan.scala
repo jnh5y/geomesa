@@ -95,11 +95,6 @@ case class DensityCoprocessorPlan(filter: HBaseFilterStrategyType,
     * @return
     */
   override def scan(ds: HBaseDataStore): CloseableIterator[SimpleFeature] = {
- //    val geom = q.getFilter.accept(ExtractBoundsFilterVisitor.BOUNDS_VISITOR, null).asInstanceOf[Envelope]
-//    q.getHints.put(QueryHints.DENSITY_BBOX, new ReferencedEnvelope(geom, DefaultGeographicCRS.WGS84))
-//    q.getHints.put(QueryHints.DENSITY_WIDTH, 500)
-//    q.getHints.put(QueryHints.DENSITY_HEIGHT, 500)
-
     val TEST_FAMILY = "an_id:java.lang.Integer,attr:java.lang.Double,dtg:Date,geom:Point:srid=4326"
     var filter = new KryoLazyDensityFilter(TEST_FAMILY, hints)
     var arr = filter.toByteArray
@@ -108,25 +103,9 @@ case class DensityCoprocessorPlan(filter: HBaseFilterStrategyType,
     import scala.collection.JavaConverters._
     val client = new FilterAggregatingClient()
     val result : List[ByteString] = client.kryoLazyDensityFilter(table1, arr).asScala.toList
-     import org.locationtech.geomesa.hbase.utils.KryoLazyDensityFilterUtils._
+    import org.locationtech.geomesa.hbase.utils.KryoLazyDensityFilterUtils._
 
-    result.map { r =>
-
-      val sf = bytesToFeatures(r.toByteArray)
-//      r
-//      val sf: SimpleFeature = density_serializer.deserialize(r.toByteArray)
-//      // Debugging
-//      hints.get(QueryHints.DENSITY_BBOX)
-        //val env = new ReferencedEnvelope(geom, DefaultGeographicCRS.WGS84)
-      import org.locationtech.geomesa.index.conf.QueryHints._
-//      val env = hints.getDensityEnvelope.get
-//        val gs = new GridSnap(env, 500, 500)
-//        val foo: Iterator[(Double, Double, Double)] = decodeResult(gs)(sf)
-//        foo.foreach{ c => println(s" Got $c")}
-      sf
-    }.toIterator
-
-
+    result.map (r => bytesToFeatures(r.toByteArray)).toIterator
   }
 }
 
