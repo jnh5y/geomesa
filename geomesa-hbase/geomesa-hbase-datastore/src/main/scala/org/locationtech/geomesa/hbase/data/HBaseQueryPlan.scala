@@ -9,14 +9,25 @@
 package org.locationtech.geomesa.hbase.data
 
 import com.google.common.collect.Lists
+import com.google.protobuf.ByteString
+import com.vividsolutions.jts.geom.Envelope
 import org.apache.hadoop.hbase.TableName
 import org.apache.hadoop.hbase.client._
 import org.apache.hadoop.hbase.filter.MultiRowRangeFilter.RowRange
 import org.apache.hadoop.hbase.filter.{FilterList, MultiRowRangeFilter, Filter => HBaseFilter}
+import org.geotools.factory.Hints
+import org.geotools.filter.visitor.ExtractBoundsFilterVisitor
+import org.geotools.geometry.jts.ReferencedEnvelope
+import org.geotools.referencing.crs.DefaultGeographicCRS
+import org.locationtech.geomesa.features.ScalaSimpleFeature
+import org.locationtech.geomesa.hbase.client.FilterAggregatingClient
+import org.locationtech.geomesa.hbase.filters.KryoLazyDensityFilter
 import org.locationtech.geomesa.hbase.utils.HBaseBatchScan
 import org.locationtech.geomesa.hbase.{HBaseFilterStrategyType, HBaseQueryPlanType}
+import org.locationtech.geomesa.index.conf.QueryHints
 import org.locationtech.geomesa.index.utils.Explainer
 import org.locationtech.geomesa.utils.collection.{CloseableIterator, SelfClosingIterator}
+import org.locationtech.geomesa.utils.geotools.{GeometryUtils, GridSnap}
 import org.opengis.feature.simple.SimpleFeature
 
 
@@ -66,8 +77,56 @@ case class ScanPlan(filter: HBaseFilterStrategyType,
                     resultsToFeatures: Iterator[Result] => Iterator[SimpleFeature]) extends HBaseQueryPlan {
   override def scan(ds: HBaseDataStore): CloseableIterator[SimpleFeature] = {
     ranges.foreach(ds.applySecurity)
-    val results = new HBaseBatchScan(ds.connection, table, ranges, ds.config.queryThreads, 100000, remoteFilters)
+    val results: HBaseBatchScan = new HBaseBatchScan(ds.connection, table, ranges, ds.config.queryThreads, 100000, remoteFilters)
     SelfClosingIterator(resultsToFeatures(results), results.close)
+  }
+}
+
+case class DensityCoprocessorPlan(filter: HBaseFilterStrategyType,
+                                  hints: Hints,
+                                  table: TableName,
+                                  ranges: Seq[Scan],
+                                  remoteFilters: Seq[HBaseFilter] = Nil,
+                                  resultsToFeatures: Iterator[Result] => Iterator[SimpleFeature]) extends HBaseQueryPlan {
+  /**
+    * Runs the query plain against the underlying database, returning the raw entries
+    *
+    * @param ds data store - provides connection object and metadata
+    * @return
+    */
+  override def scan(ds: HBaseDataStore): CloseableIterator[SimpleFeature] = {
+ //    val geom = q.getFilter.accept(ExtractBoundsFilterVisitor.BOUNDS_VISITOR, null).asInstanceOf[Envelope]
+//    q.getHints.put(QueryHints.DENSITY_BBOX, new ReferencedEnvelope(geom, DefaultGeographicCRS.WGS84))
+//    q.getHints.put(QueryHints.DENSITY_WIDTH, 500)
+//    q.getHints.put(QueryHints.DENSITY_HEIGHT, 500)
+
+    val TEST_FAMILY = "an_id:java.lang.Integer,attr:java.lang.Double,dtg:Date,geom:Point:srid=4326"
+    var filter = new KryoLazyDensityFilter(TEST_FAMILY, hints)
+    var arr = filter.toByteArray
+    val table1 = ds.connection.getTable(table)
+
+    import scala.collection.JavaConverters._
+    val client = new FilterAggregatingClient()
+    val result : List[ByteString] = client.kryoLazyDensityFilter(table1, arr).asScala.toList
+     import org.locationtech.geomesa.hbase.utils.KryoLazyDensityFilterUtils._
+
+    result.map { r =>
+
+      val sf = bytesToFeatures(r.toByteArray)
+//      r
+//      val sf: SimpleFeature = density_serializer.deserialize(r.toByteArray)
+//      // Debugging
+//      hints.get(QueryHints.DENSITY_BBOX)
+        //val env = new ReferencedEnvelope(geom, DefaultGeographicCRS.WGS84)
+      import org.locationtech.geomesa.index.conf.QueryHints._
+//      val env = hints.getDensityEnvelope.get
+//        val gs = new GridSnap(env, 500, 500)
+//        val foo: Iterator[(Double, Double, Double)] = decodeResult(gs)(sf)
+//        foo.foreach{ c => println(s" Got $c")}
+      sf
+    }.toIterator
+
+
   }
 }
 
