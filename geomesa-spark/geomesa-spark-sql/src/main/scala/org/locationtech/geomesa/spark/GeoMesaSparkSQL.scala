@@ -224,7 +224,7 @@ object SparkUtils extends LazyLogging {
 
     val requiredAttributes = requiredColumns.filterNot(_ == "__fid__")
     val rdd = GeoMesaSpark(params).rdd(
-      new Configuration(), ctx, params,
+      ctx.hadoopConfiguration, ctx, params,
       new Query(params(GEOMESA_SQL_FEATURE), compiledCQL, requiredAttributes))
 
     type EXTRACTOR = SimpleFeature => AnyRef

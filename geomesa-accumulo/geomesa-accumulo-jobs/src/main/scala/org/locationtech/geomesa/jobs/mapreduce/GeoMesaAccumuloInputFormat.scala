@@ -169,7 +169,14 @@ class GeoMesaAccumuloInputFormat extends InputFormat[Text, SimpleFeature] with L
 
   private def init(context: JobContext) = if (sft == null) {
     val conf = context.getConfiguration
-    val params = GeoMesaConfigurator.getDataStoreInParams(conf)
+    val params = new CaseInsensitiveMap(GeoMesaConfigurator.getDataStoreInParams(conf)).asInstanceOf[java.util.Map[String, String]]
+
+    println(" Dumping CaseInsensitiveMap datastore params in GM AIF")
+    params.foreach { p => println(s"${p._1} => ${p._2}")}
+
+    logger.info(" Dumping CaseInsensitiveMap datastore params in GM AIF")
+    params.foreach { p => logger.info(s"${p._1} => ${p._2}")}
+
 
     // Extract password from params to see if we are using Kerberos or not
     val password = AccumuloDataStoreParams.passwordParam.lookUp(params).asInstanceOf[String]
@@ -218,6 +225,7 @@ class GeoMesaAccumuloInputFormat extends InputFormat[Text, SimpleFeature] with L
           } catch {
             case e: IOException => throw new RuntimeException("Could not construct DelegationToken from JobContext credentials", e)
           }
+
 
           // Build connector
           val instance = AccumuloDataStoreParams.instanceIdParam.lookUp(params).asInstanceOf[String]

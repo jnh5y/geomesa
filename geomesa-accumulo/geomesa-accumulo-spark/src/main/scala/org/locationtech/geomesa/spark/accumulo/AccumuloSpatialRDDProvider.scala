@@ -9,6 +9,9 @@
 
 package org.locationtech.geomesa.spark.accumulo
 
+import java.util.Map.Entry
+import java.util.function.Consumer
+
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.accumulo.core.client.ClientConfiguration
 import org.apache.accumulo.core.client.mapred.AbstractInputFormat
@@ -71,6 +74,17 @@ class AccumuloSpatialRDDProvider extends SpatialRDDProvider with LazyLogging {
         InputConfigurator.setBatchScan(classOf[GeoMesaAccumuloInputFormat], conf, true)
         GeoMesaConfigurator.setSerialization(conf)
         GeoMesaConfigurator.setTable(conf, qp.table)
+
+        println("In rdd method, params: ")
+        params.foreach { p =>
+          println(s"${p._1} -> ${p._2}")
+        }
+
+        logger.info("In rdd method, params: ")
+        params.foreach { p =>
+          logger.info(s"${p._1} -> ${p._2}")
+        }
+
         GeoMesaConfigurator.setDataStoreInParams(conf, params)
         GeoMesaConfigurator.setFeatureType(conf, sft.getTypeName)
 
@@ -138,6 +152,11 @@ class AccumuloSpatialRDDProvider extends SpatialRDDProvider with LazyLogging {
             jconf.set("org.locationtech.geomesa.token", tok.encodeToUrlString())
           }
         }
+
+        println("Dumping JCONF:")
+        jconf.forEach(new Consumer[Entry[String, String]] {
+          override def accept(t: Entry[String, String]) = println(s"${t.getKey} -> ${t.getValue}")
+        })
 
         // From sc.newAPIHadoopRDD
         new NewHadoopRDD(sc, classOf[GeoMesaAccumuloInputFormat], classOf[Text], classOf[SimpleFeature], jconf).map(U => U._2)
