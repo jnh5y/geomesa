@@ -11,7 +11,7 @@ package org.locationtech.geomesa.filter
 import java.util.Date
 
 import com.typesafe.scalalogging.LazyLogging
-import com.vividsolutions.jts.geom._
+import org.locationtech.jts.geom._
 import org.geotools.data.DataUtilities
 import org.geotools.filter.spatial.BBOXImpl
 import org.joda.time.{DateTime, DateTimeZone}

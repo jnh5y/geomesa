@@ -8,7 +8,7 @@
 
 package org.apache.spark.sql
 
-import com.vividsolutions.jts.geom._
+import org.locationtech.jts.geom._
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.types._

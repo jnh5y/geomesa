@@ -8,7 +8,7 @@
 
 package org.apache.spark.sql
 
-import com.vividsolutions.jts.geom.{Geometry, Point}
+import org.locationtech.jts.geom.{Geometry, Point}
 import org.apache.spark.sql.SQLFunctionHelper.nullableUDF
 import org.geotools.geojson.geom.GeometryJSON
 import org.locationtech.geomesa.utils.geohash.GeoHash

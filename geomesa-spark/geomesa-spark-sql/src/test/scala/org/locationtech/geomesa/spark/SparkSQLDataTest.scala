@@ -12,7 +12,7 @@ import java.util
 import java.util.{Map => JMap}
 
 import com.typesafe.scalalogging.LazyLogging
-import com.vividsolutions.jts.geom.{GeometryFactory, Coordinate, Point}
+import org.locationtech.jts.geom.{GeometryFactory, Coordinate, Point}
 import org.apache.spark.sql.{DataFrame, SQLContext, SparkSession}
 import org.geotools.data.{DataStore, DataStoreFinder}
 import org.geotools.geometry.jts.JTSFactoryFinder

@@ -13,7 +13,7 @@ import java.util.{Date, DoubleSummaryStatistics, ServiceLoader, UUID}
 
 import com.google.common.hash.Hashing
 import com.typesafe.scalalogging.LazyLogging
-import com.vividsolutions.jts.geom._
+import org.locationtech.jts.geom._
 import org.apache.commons.codec.binary.Base64
 import org.geotools.geometry.jts.JTSFactoryFinder
 import org.geotools.util.Converters

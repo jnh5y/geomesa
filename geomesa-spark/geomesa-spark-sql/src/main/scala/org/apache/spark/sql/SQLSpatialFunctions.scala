@@ -10,8 +10,8 @@ package org.apache.spark.sql
 
 import java.awt.geom.AffineTransform
 
-import com.vividsolutions.jts.geom._
-import com.vividsolutions.jts.operation.distance.DistanceOp
+import org.locationtech.jts.geom._
+import org.locationtech.jts.operation.distance.DistanceOp
 import org.apache.spark.sql.udaf.ConvexHull
 import org.apache.spark.sql.SQLFunctionHelper.nullableUDF
 import org.geotools.geometry.jts.{JTS, JTSFactoryFinder}

@@ -16,7 +16,7 @@ import java.util
 import java.util.Date
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions, ConfigValueFactory}
-import com.vividsolutions.jts.geom.{Geometry, Point}
+import org.locationtech.jts.geom.{Geometry, Point}
 import org.joda.time.{DateTime, DateTimeZone}
 import org.locationtech.geomesa.curve.Z2SFC
 import org.locationtech.geomesa.filter.FilterHelper.extractGeometries

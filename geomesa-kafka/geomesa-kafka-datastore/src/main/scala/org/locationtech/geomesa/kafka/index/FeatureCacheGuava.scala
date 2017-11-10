@@ -10,7 +10,7 @@ package org.locationtech.geomesa.kafka.index
 
 import com.github.benmanes.caffeine.cache._
 import com.typesafe.scalalogging.LazyLogging
-import com.vividsolutions.jts.geom.Envelope
+import org.locationtech.jts.geom.Envelope
 import org.locationtech.geomesa.filter.index.SpatialIndexSupport
 import org.locationtech.geomesa.kafka.index.FeatureCacheGuava.FeatureHolder
 import org.locationtech.geomesa.kafka.index.KafkaFeatureCache.AbstractKafkaFeatureCache

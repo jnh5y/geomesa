@@ -13,7 +13,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 import com.google.common.io.Files
-import com.vividsolutions.jts.geom.Coordinate
+import org.locationtech.jts.geom.Coordinate
 import org.geotools.data.Transaction
 import org.geotools.data.shapefile.ShapefileDataStoreFactory
 import org.geotools.factory.Hints

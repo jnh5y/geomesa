@@ -14,7 +14,7 @@ import java.util.regex.Pattern
 import com.googlecode.cqengine.attribute.Attribute
 import com.googlecode.cqengine.query.Query
 import com.googlecode.cqengine.{query => cqquery}
-import com.vividsolutions.jts.geom.Geometry
+import org.locationtech.jts.geom.Geometry
 import org.geotools.filter.LikeToRegexConverter
 import org.geotools.filter.visitor.AbstractFilterVisitor
 import org.locationtech.geomesa.filter._

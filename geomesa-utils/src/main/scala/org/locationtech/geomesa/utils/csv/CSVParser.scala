@@ -11,7 +11,7 @@ package org.locationtech.geomesa.utils.csv
 import java.lang.{Double => jDouble, Integer => jInt}
 import java.util.Date
 
-import com.vividsolutions.jts.geom._
+import org.locationtech.jts.geom._
 import org.joda.time.DateTime
 import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
 import org.locationtech.geomesa.utils.geotools.SftBuilder

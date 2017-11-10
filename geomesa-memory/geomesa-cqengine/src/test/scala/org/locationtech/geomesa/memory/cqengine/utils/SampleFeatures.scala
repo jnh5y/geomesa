@@ -8,7 +8,7 @@
 
 package org.locationtech.geomesa.memory.cqengine.utils
 
-import com.vividsolutions.jts.geom.Point
+import org.locationtech.jts.geom.Point
 import org.geotools.factory.CommonFactoryFinder
 import org.geotools.feature.simple.SimpleFeatureBuilder
 import org.geotools.filter.text.ecql.ECQL

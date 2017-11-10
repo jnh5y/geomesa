@@ -9,8 +9,8 @@
 package org.apache.spark.sql
 
 import com.typesafe.scalalogging.LazyLogging
-import com.vividsolutions.jts.geom.{Geometry, Coordinate, Point, Polygon}
-import com.vividsolutions.jts.util.GeometricShapeFactory
+import org.locationtech.jts.geom.{Geometry, Coordinate, Point, Polygon}
+import org.locationtech.jts.util.GeometricShapeFactory
 import org.apache.spark.sql.SQLFunctionHelper.nullableUDF
 import org.geotools.geometry.jts.JTSFactoryFinder
 import org.locationtech.geomesa.utils.geohash.GeohashUtils

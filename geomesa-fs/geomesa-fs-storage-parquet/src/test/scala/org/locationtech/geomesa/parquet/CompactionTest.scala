@@ -11,7 +11,7 @@ package org.locationtech.geomesa.parquet
 import java.nio.file.Files
 import java.text.SimpleDateFormat
 
-import com.vividsolutions.jts.geom.Coordinate
+import org.locationtech.jts.geom.Coordinate
 import org.apache.commons.io.FileUtils
 import org.geotools.data.Query
 import org.geotools.factory.CommonFactoryFinder

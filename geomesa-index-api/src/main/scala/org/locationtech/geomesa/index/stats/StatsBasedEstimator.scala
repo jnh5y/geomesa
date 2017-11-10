@@ -10,7 +10,7 @@ package org.locationtech.geomesa.index.stats
 
 import java.util.Date
 
-import com.vividsolutions.jts.geom.Geometry
+import org.locationtech.jts.geom.Geometry
 import org.joda.time.DateTime
 import org.locationtech.geomesa.curve.{BinnedTime, Z2SFC, Z3SFC}
 import org.locationtech.geomesa.filter.Bounds.Bound

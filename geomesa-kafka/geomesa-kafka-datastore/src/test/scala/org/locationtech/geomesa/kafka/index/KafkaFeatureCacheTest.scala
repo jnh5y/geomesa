@@ -9,7 +9,7 @@
 package org.locationtech.geomesa.kafka.index
 
 import com.github.benmanes.caffeine.cache.Ticker
-import com.vividsolutions.jts.geom.Geometry
+import org.locationtech.jts.geom.Geometry
 import org.geotools.filter.text.ecql.ECQL
 import org.junit.runner.RunWith
 import org.locationtech.geomesa.features.ScalaSimpleFeature

@@ -9,7 +9,7 @@
 
 package org.locationtech.geomesa.filter.function
 
-import com.vividsolutions.jts.geom.{Geometry, Point}
+import org.locationtech.jts.geom.{Geometry, Point}
 import org.geotools.data.Base64
 import org.geotools.filter.FunctionExpressionImpl
 import org.geotools.filter.capability.FunctionNameImpl

@@ -10,7 +10,7 @@ package org.apache.spark.sql
 
 import java.{lang => jl}
 
-import com.vividsolutions.jts.geom._
+import org.locationtech.jts.geom._
 import org.apache.spark.sql.SQLFunctionHelper.nullableUDF
 
 object SQLSpatialAccessorFunctions {

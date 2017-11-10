@@ -8,7 +8,7 @@
 
 package org.apache.spark.sql
 
-import com.vividsolutions.jts.geom._
+import org.locationtech.jts.geom._
 import org.geotools.geometry.jts.JTS
 import org.locationtech.geomesa.utils.geohash.{BoundingBox, GeoHash}
 import org.locationtech.geomesa.utils.text.{WKBUtils, WKTUtils}

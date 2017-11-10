@@ -16,7 +16,7 @@ import java.{util => ju}
 import com.github.benmanes.caffeine.cache.{Cache, Caffeine, RemovalCause, RemovalListener}
 import com.google.common.collect.Lists
 import com.typesafe.config.ConfigFactory
-import com.vividsolutions.jts.geom.Envelope
+import org.locationtech.jts.geom.Envelope
 import org.geotools.data.DataAccessFactory.Param
 import org.geotools.data._
 import org.geotools.data.simple.{DelegateSimpleFeatureReader, SimpleFeatureReader}

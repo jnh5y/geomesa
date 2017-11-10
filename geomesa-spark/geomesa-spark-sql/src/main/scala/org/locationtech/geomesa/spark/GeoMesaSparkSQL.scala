@@ -13,9 +13,9 @@ import java.time.Instant
 import java.util.{Date, UUID}
 
 import com.typesafe.scalalogging.LazyLogging
-import com.vividsolutions.jts.geom._
-import com.vividsolutions.jts.index.strtree.{AbstractNode, Boundable, STRtree}
-import com.vividsolutions.jts.index.sweepline.{SweepLineIndex, SweepLineInterval, SweepLineOverlapAction}
+import org.locationtech.jts.geom._
+import org.locationtech.jts.index.strtree.{AbstractNode, Boundable, STRtree}
+import org.locationtech.jts.index.sweepline.{SweepLineIndex, SweepLineInterval, SweepLineOverlapAction}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
@@ -122,11 +122,11 @@ class GeoMesaDataSource extends DataSourceRegister
           case DataTypes.LongType   => builder.add(field.name, classOf[jl.Long])
           case DataTypes.TimestampType => builder.add(field.name, classOf[java.util.Date])
 
-          case SQLTypes.PointTypeInstance => builder.add(field.name, classOf[com.vividsolutions.jts.geom.Point])
-          case SQLTypes.LineStringTypeInstance => builder.add(field.name, classOf[com.vividsolutions.jts.geom.LineString])
-          case SQLTypes.PolygonTypeInstance  => builder.add(field.name, classOf[com.vividsolutions.jts.geom.Polygon])
-          case SQLTypes.MultipolygonTypeInstance  => builder.add(field.name, classOf[com.vividsolutions.jts.geom.MultiPolygon])
-          case SQLTypes.GeometryTypeInstance => builder.add(field.name, classOf[com.vividsolutions.jts.geom.Geometry])
+          case SQLTypes.PointTypeInstance => builder.add(field.name, classOf[org.locationtech.jts.geom.Point])
+          case SQLTypes.LineStringTypeInstance => builder.add(field.name, classOf[org.locationtech.jts.geom.LineString])
+          case SQLTypes.PolygonTypeInstance  => builder.add(field.name, classOf[org.locationtech.jts.geom.Polygon])
+          case SQLTypes.MultipolygonTypeInstance  => builder.add(field.name, classOf[org.locationtech.jts.geom.MultiPolygon])
+          case SQLTypes.GeometryTypeInstance => builder.add(field.name, classOf[org.locationtech.jts.geom.Geometry])
         }
     }
     builder.setName(name)
@@ -144,12 +144,12 @@ class GeoMesaDataSource extends DataSourceRegister
       case t if t == classOf[jl.Long]                         => DataTypes.LongType
       case t if t == classOf[java.util.Date]                  => DataTypes.TimestampType
 
-      case t if t == classOf[com.vividsolutions.jts.geom.Point]            => SQLTypes.PointTypeInstance
-      case t if t == classOf[com.vividsolutions.jts.geom.MultiPoint]       => SQLTypes.MultiPointTypeInstance
-      case t if t == classOf[com.vividsolutions.jts.geom.LineString]       => SQLTypes.LineStringTypeInstance
-      case t if t == classOf[com.vividsolutions.jts.geom.MultiLineString]  => SQLTypes.MultiLineStringTypeInstance
-      case t if t == classOf[com.vividsolutions.jts.geom.Polygon]          => SQLTypes.PolygonTypeInstance
-      case t if t == classOf[com.vividsolutions.jts.geom.MultiPolygon]     => SQLTypes.MultipolygonTypeInstance
+      case t if t == classOf[org.locationtech.jts.geom.Point]            => SQLTypes.PointTypeInstance
+      case t if t == classOf[org.locationtech.jts.geom.MultiPoint]       => SQLTypes.MultiPointTypeInstance
+      case t if t == classOf[org.locationtech.jts.geom.LineString]       => SQLTypes.LineStringTypeInstance
+      case t if t == classOf[org.locationtech.jts.geom.MultiLineString]  => SQLTypes.MultiLineStringTypeInstance
+      case t if t == classOf[org.locationtech.jts.geom.Polygon]          => SQLTypes.PolygonTypeInstance
+      case t if t == classOf[org.locationtech.jts.geom.MultiPolygon]     => SQLTypes.MultipolygonTypeInstance
 
       case t if      classOf[Geometry].isAssignableFrom(t)    => SQLTypes.GeometryTypeInstance
 

@@ -8,7 +8,7 @@
 
 package org.locationtech.geomesa.compute.spark.analytics
 
-import com.vividsolutions.jts.geom.Geometry
+import org.locationtech.jts.geom.Geometry
 import org.locationtech.geomesa.accumulo.data.AccumuloDataStore
 import org.geotools.data.DataStoreFinder
 import org.apache.spark.{SparkConf, SparkContext}

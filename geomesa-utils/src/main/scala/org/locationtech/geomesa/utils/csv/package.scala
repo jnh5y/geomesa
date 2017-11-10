@@ -14,7 +14,7 @@ import java.util.zip.{ZipEntry, ZipOutputStream}
 import java.util.{Date, Iterator => jIterator}
 
 import com.typesafe.scalalogging.LazyLogging
-import com.vividsolutions.jts.geom._
+import org.locationtech.jts.geom._
 import org.apache.commons.csv.{CSVFormat, CSVRecord}
 import org.apache.commons.io.FilenameUtils
 import org.geotools.data.DefaultTransaction

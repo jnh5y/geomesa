@@ -10,7 +10,7 @@ package org.locationtech.geomesa.features.serialization
 
 import java.util.{UUID, Collections => jCollections, List => jList, Map => jMap}
 
-import com.vividsolutions.jts.geom.Geometry
+import org.locationtech.jts.geom.Geometry
 import org.geotools.factory.Hints
 import org.locationtech.geomesa.utils.geotools.SimpleFeatureTypes.AttributeOptions._
 

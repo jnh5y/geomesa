@@ -8,7 +8,7 @@
 
 package org.apache.spark.sql.udaf
 
-import com.vividsolutions.jts.geom.Geometry
+import org.locationtech.jts.geom.Geometry
 import org.apache.spark.sql.{Row, SQLTypes}
 import org.apache.spark.sql.expressions.{MutableAggregationBuffer, UserDefinedAggregateFunction}
 

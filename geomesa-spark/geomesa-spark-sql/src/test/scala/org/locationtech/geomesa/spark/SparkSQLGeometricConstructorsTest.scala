@@ -11,7 +11,7 @@ package org.locationtech.geomesa.spark
 import java.util.{Map => JMap}
 
 import com.typesafe.scalalogging.LazyLogging
-import com.vividsolutions.jts.geom._
+import org.locationtech.jts.geom._
 import org.apache.spark.sql.SQLTypes
 import org.geotools.data.DataStoreFinder
 import org.geotools.geometry.jts.JTS

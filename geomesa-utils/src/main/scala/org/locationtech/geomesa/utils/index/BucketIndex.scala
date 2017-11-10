@@ -11,7 +11,7 @@ package org.locationtech.geomesa.utils.index
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 
-import com.vividsolutions.jts.geom.Envelope
+import org.locationtech.jts.geom.Envelope
 import org.locationtech.geomesa.utils.geotools.GridSnap
 
 /**

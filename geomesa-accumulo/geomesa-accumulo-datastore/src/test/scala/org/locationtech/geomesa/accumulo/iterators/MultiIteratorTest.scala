@@ -9,7 +9,7 @@
 package org.locationtech.geomesa.accumulo.iterators
 
 import com.typesafe.scalalogging.LazyLogging
-import com.vividsolutions.jts.geom.Polygon
+import org.locationtech.jts.geom.Polygon
 import org.geotools.data.Query
 import org.geotools.data.simple.SimpleFeatureCollection
 import org.geotools.filter.text.ecql.ECQL

@@ -9,7 +9,7 @@
 package org.apache.spark.sql
 
 import com.typesafe.scalalogging.LazyLogging
-import com.vividsolutions.jts.geom.{Envelope, Geometry}
+import org.locationtech.jts.geom.{Envelope, Geometry}
 import org.apache.spark.sql.SQLTypes._
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback

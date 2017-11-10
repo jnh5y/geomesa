@@ -8,7 +8,7 @@
 
 package org.locationtech.geomesa.index.index.z3
 
-import com.vividsolutions.jts.geom.Geometry
+import org.locationtech.jts.geom.Geometry
 import org.joda.time.DateTime
 import org.locationtech.geomesa.curve.XZ3SFC
 import org.locationtech.geomesa.filter.{Bounds, FilterValues}

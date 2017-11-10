@@ -9,7 +9,7 @@
 package org.locationtech.geomesa.process.query
 
 import com.typesafe.scalalogging.LazyLogging
-import com.vividsolutions.jts.geom.GeometryFactory
+import org.locationtech.jts.geom.GeometryFactory
 import org.geotools.data.Query
 import org.geotools.data.collection.ListFeatureCollection
 import org.geotools.data.simple.{SimpleFeatureCollection, SimpleFeatureSource}
