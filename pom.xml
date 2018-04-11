@@ -47,6 +47,7 @@
         <module>geomesa-stream</module>
         <module>geomesa-test</module>
         <module>geomesa-tools</module>
+        <module>geomesa-trajectory</module>
         <module>geomesa-utils</module>
         <module>geomesa-web</module>
         <module>geomesa-z3</module>
