@@ -43,6 +43,17 @@
             <groupId>org.locationtech.geomesa</groupId>
             <artifactId>geomesa-utils_${scala.binary.version}</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.locationtech.geomesa</groupId>
+            <artifactId>geomesa-feature-common_2.11</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>org.locationtech.geomesa</groupId>-->
+            <!--<artifactId>geomesa-feature-all_2.11</artifactId>-->
+            <!--<version>${project.version}</version>-->
+        <!--</dependency>-->
+
         <!-- test deps -->
         <dependency>
             <groupId>org.locationtech.geomesa</groupId>
