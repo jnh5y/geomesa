@@ -16,14 +16,15 @@ import org.opengis.feature.simple.{SimpleFeature, SimpleFeatureType}
 import org.locationtech.geomesa.features._
 
 case class Trajectory(obs: Array[SimpleFeature]) {
-  val sft: SimpleFeatureType = obs.head.getFeatureType
-  val sf: SimpleFeature = ScalaSimpleFeature.create(Trajectory.trajSFT,
+  lazy val sft: SimpleFeatureType = obs.head.getFeatureType
+  lazy val sf: SimpleFeature = ScalaSimpleFeature.create(Trajectory.trajSFT,
     "ID",
-    getStartDate,
-    getEndDate,
-    getPath,
-    getStartPoint,
-    getEndPoint)
+    "EntityID",
+    getStartDate(),
+    getEndDate(),
+    getPath(),
+    getStartPoint(),
+    getEndPoint())
 
   // TODO: Implement configurable/variable ways of specifying the dtg/geom attributes
   // TODO: Implement getAttribute by index rather than
@@ -33,15 +34,19 @@ case class Trajectory(obs: Array[SimpleFeature]) {
   def length: Int = obs.length
   def getObs(n: Int): SimpleFeature = obs(n)
 
-  def getStart: SimpleFeature = obs(0)
-  def getEnd: SimpleFeature = obs(obs.length-1)
+  def getStart(): SimpleFeature = obs(0)
+  def getEnd(): SimpleFeature = obs(obs.length-1)
 
-  def getStartDate: Date = getStart.getAttribute(dtgAttribute).asInstanceOf[Date]
-  def getEndDate: Date   = getEnd.getAttribute(dtgAttribute).asInstanceOf[Date]
+  def getStartDate(): Date = getStart.getAttribute(dtgAttribute).asInstanceOf[Date]
+  def getEndDate(): Date   = getEnd.getAttribute(dtgAttribute).asInstanceOf[Date]
 
-  def getStartPoint: Point = getStart.getAttribute(geomAttribute).asInstanceOf[Point]
-  def getEndPoint: Point   = getEnd.getAttribute(geomAttribute).asInstanceOf[Point]
-  def getPath: LineString  = Trajectory.gf.createLineString(obs.map(_.getAttribute(geomAttribute).asInstanceOf[Point].getCoordinate))
+  def getStartPoint(): Point = getStart.getAttribute(geomAttribute).asInstanceOf[Point]
+  def getEndPoint(): Point   = getEnd.getAttribute(geomAttribute).asInstanceOf[Point]
+  def getPath(): LineString  = {
+    val coords = obs.map(_.getAttribute(geomAttribute).asInstanceOf[Point].getCoordinate)
+    println(s"Coords: ${coords.length}")
+    Trajectory.gf.createLineString(coords)
+  }
 }
 
 object Trajectory {

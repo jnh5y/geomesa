@@ -11,10 +11,9 @@ package org.locationtech.geomesa.trajectory
 import org.geotools.data.Query
 import org.geotools.factory.CommonFactoryFinder
 import org.geotools.filter.LiteralExpressionImpl
-import org.opengis.geometry.BoundingBox
-import org.locationtech.geomesa.trajectory.TrajectoryStore._
 import org.locationtech.geomesa.trajectory.Trajectory._
-import org.opengis.filter.expression.Literal
+import org.locationtech.geomesa.trajectory.TrajectoryStore._
+import org.opengis.geometry.BoundingBox
 
 class TrajectoryStore {
   val buf = scala.collection.mutable.ListBuffer.empty[Trajectory]
@@ -28,13 +27,11 @@ class TrajectoryStore {
     buf.filter(t => filter.evaluate(t.sf))
   }
 
-  def getTrajectoriesIntersectingBBOX(bbox: BoundingBox) = {
+  def getTrajectoriesIntersectingBBOX(bbox: BoundingBox): Seq[Trajectory] = {
     val q = new Query()
     q.setFilter(ff.bbox(new LiteralExpressionImpl(PathFieldName), bbox))
     getTrajectories(q)
   }
-
-
 }
 
 object TrajectoryStore {
