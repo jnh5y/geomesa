@@ -10,7 +10,7 @@ package org.locationtech.geomesa.trajectory
 
 import org.geotools.data.Query
 import org.geotools.factory.CommonFactoryFinder
-import org.geotools.filter.LiteralExpressionImpl
+import org.geotools.filter.AttributeExpressionImpl
 import org.locationtech.geomesa.trajectory.Trajectory._
 import org.locationtech.geomesa.trajectory.TrajectoryStore._
 import org.opengis.geometry.BoundingBox
@@ -29,7 +29,7 @@ class TrajectoryStore {
 
   def getTrajectoriesIntersectingBBOX(bbox: BoundingBox): Seq[Trajectory] = {
     val q = new Query()
-    q.setFilter(ff.bbox(new LiteralExpressionImpl(PathFieldName), bbox))
+    q.setFilter(ff.bbox(new AttributeExpressionImpl(PathFieldName), bbox))
     getTrajectories(q)
   }
 }
