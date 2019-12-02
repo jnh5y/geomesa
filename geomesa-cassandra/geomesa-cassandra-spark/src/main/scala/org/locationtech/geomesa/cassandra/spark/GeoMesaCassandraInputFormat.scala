@@ -48,7 +48,7 @@ class GeoMesaCassandraInputFormat extends InputFormat[Text, SimpleFeature] with 
   }
 
   override def createRecordReader(inputSplit: InputSplit, taskAttemptContext: TaskAttemptContext): RecordReader[Text, SimpleFeature] = {
-    val toFeatures = GeoMesaConfigurator.getResultsToFeatures[Entry[Long, Row]](taskAttemptContext.getConfiguration)
+    val toFeatures = GeoMesaConfigurator.getResultsToFeatures[Row](taskAttemptContext.getConfiguration)
     new CassandraRecordReader(toFeatures, delegate.createRecordReader(inputSplit, taskAttemptContext))
   }
 
@@ -60,7 +60,7 @@ class GeoMesaCassandraInputFormat extends InputFormat[Text, SimpleFeature] with 
    * @param toFeatures results to features
    * @param reader delegate reader
    */
-  class CassandraRecordReader(toFeatures: ResultsToFeatures[Entry[Long, Row]], reader: RecordReader[java.lang.Long, Row])
+  class CassandraRecordReader(toFeatures: ResultsToFeatures[Row], reader: RecordReader[java.lang.Long, Row])
       extends RecordReader[Text, SimpleFeature] {
 
     private val key = new Text()
@@ -74,7 +74,7 @@ class GeoMesaCassandraInputFormat extends InputFormat[Text, SimpleFeature] with 
 
     override def nextKeyValue(): Boolean = {
       if (reader.nextKeyValue()) {
-        currentFeature = toFeatures.apply(new SimpleImmutableEntry(reader.getCurrentKey, reader.getCurrentValue))
+        currentFeature = toFeatures.apply(reader.getCurrentValue)
         key.set(currentFeature.getID)
         true
       } else
