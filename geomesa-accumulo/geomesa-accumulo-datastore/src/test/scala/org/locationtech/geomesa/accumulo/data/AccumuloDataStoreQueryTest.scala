@@ -485,8 +485,10 @@ class AccumuloDataStoreQueryTest extends Specification with TestWithMultipleSfts
 
       val dsWithTimeout = DataStoreFinder.getDataStore(params).asInstanceOf[AccumuloDataStore]
       val reader = dsWithTimeout.getFeatureReader(new Query(defaultSft.getTypeName, Filter.INCLUDE), Transaction.AUTO_COMMIT)
-      reader.isClosed must beFalse
-      eventually(20, 200.millis)(reader.isClosed must beTrue)
+      reader.hasNext()
+      Thread.sleep(5000)
+      reader.close() must throwAn[Exception]
+//      eventually(20, 200.millis)(reader.isClosed must beTrue)
     }
 
     "block full table scans" in {

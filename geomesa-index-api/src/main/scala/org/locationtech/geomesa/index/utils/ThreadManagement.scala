@@ -8,10 +8,12 @@
 
 package org.locationtech.geomesa.index.utils
 
-import java.io.Closeable
 import java.util.concurrent.{ScheduledFuture, ScheduledThreadPoolExecutor, TimeUnit}
 
 import com.typesafe.scalalogging.LazyLogging
+import org.locationtech.geomesa.filter.filterToString
+import org.locationtech.geomesa.index.api.QueryPlan
+import org.locationtech.geomesa.index.geotools.GeoMesaDataStore
 import org.locationtech.geomesa.utils.concurrent.ExitingExecutor
 
 import scala.util.control.NonFatal
@@ -28,27 +30,54 @@ object ThreadManagement extends LazyLogging {
   }
 
   /**
-   * Register a query with the thread manager
+   * Register a scan with the thread manager
+   *
+   * @param scan scan to terminate
+   * @return
    */
-  def register(query: ManagedQuery): ScheduledFuture[_] =
-    executor.schedule(new QueryKiller(query), query.getTimeout, TimeUnit.MILLISECONDS)
+  def register[DS <: GeoMesaDataStore[DS]](scan: ManagedScan[DS]): ScheduledFuture[_] = {
+    val timeout = math.max(1, scan.timeout.absolute - System.currentTimeMillis())
+    executor.schedule(new QueryKiller(scan), timeout, TimeUnit.MILLISECONDS)
+  }
 
   /**
     * Trait for classes to be managed for timeouts
     */
-  trait ManagedQuery extends Closeable {
-    def getTimeout: Long
-    def isClosed: Boolean
-    def debug: String
+  trait ManagedScan[DS <: GeoMesaDataStore[DS]] {
+
+    /**
+     * The query plan being run
+     *
+     * @return
+     */
+    def plan: QueryPlan[DS]
+
+    /**
+     * The timeout
+     *
+     * @return
+     */
+    def timeout: Timeout
+
+    /**
+     * Forcibly terminate the scan
+     */
+    def terminate(): Unit
   }
 
-  private class QueryKiller(query: ManagedQuery) extends Runnable {
+  case class Timeout(relative: Long, absolute: Long)
+
+  object Timeout {
+    def apply(relative: Long): Timeout = Timeout(relative, System.currentTimeMillis() + relative)
+  }
+
+  private class QueryKiller[DS <: GeoMesaDataStore[DS]](scan: ManagedScan[DS]) extends Runnable {
     override def run(): Unit = {
-      if (!query.isClosed) {
-        logger.warn(s"Stopping ${query.debug} based on timeout of ${query.getTimeout}ms")
-        try { query.close() } catch {
-          case NonFatal(e) => logger.warn("Error cancelling query:", e)
-        }
+      logger.warn(
+        s"Stopping scan on schema '${scan.plan.filter.index.sft.getTypeName}' with filter " +
+          s"'${filterToString(scan.plan.filter.filter)}' based on timeout of ${scan.timeout.relative}ms")
+      try { scan.terminate() } catch {
+        case NonFatal(e) => logger.warn("Error cancelling scan:", e)
       }
     }
   }
