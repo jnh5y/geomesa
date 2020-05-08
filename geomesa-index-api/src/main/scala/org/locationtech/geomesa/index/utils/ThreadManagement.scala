@@ -9,7 +9,6 @@
 package org.locationtech.geomesa.index.utils
 
 import java.io.Closeable
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.{ScheduledFuture, ScheduledThreadPoolExecutor, TimeUnit}
 
 import com.typesafe.scalalogging.LazyLogging
@@ -79,13 +78,12 @@ object ThreadManagement extends LazyLogging {
   abstract class AbstractManagedScan[T](val timeout: Timeout, underlying: LowLevelScanner[T])
       extends ManagedScan[T] with LazyLogging {
 
-    private val (terminated, iter, cancel) = {
-      if (System.currentTimeMillis() < timeout.absolute) {
-        (new AtomicBoolean(false), underlying.iterator, Some(ThreadManagement.register(this)))
-      } else {
-        (new AtomicBoolean(true), Iterator.empty, None)
-      }
-    }
+    // we can use a volatile var since we only update the value with a single thread
+    @volatile
+    private var terminated = timeout.absolute >= System.currentTimeMillis()
+
+    private val iter = if (terminated) { Iterator.empty } else { underlying.iterator }
+    private val cancel = if (terminated) { None } else { Some(ThreadManagement.register(this)) }
 
     // used for log messages
     protected def typeName: String
@@ -95,7 +93,7 @@ object ThreadManagement extends LazyLogging {
     override def next(): T = iter.next()
 
     override def terminate(): Unit = {
-      terminated.set(true)
+      terminated = true
       try {
         logger.warn(
           s"Stopping scan on schema '$typeName' with filter '${filterToString(filter)}' " +
@@ -106,12 +104,12 @@ object ThreadManagement extends LazyLogging {
       }
     }
 
-    override def isTerminated: Boolean = terminated.get
+    override def isTerminated: Boolean = terminated
 
     override def close(): Unit = {
       cancel.foreach(_.cancel(false))
       underlying.close()
-      if (terminated.get) {
+      if (terminated) {
         throw new RuntimeException(s"Scan terminated due to timeout of ${timeout.relative}ms")
       }
     }
