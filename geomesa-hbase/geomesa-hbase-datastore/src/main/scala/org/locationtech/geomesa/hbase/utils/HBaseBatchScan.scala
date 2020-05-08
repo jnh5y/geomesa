@@ -85,7 +85,7 @@ object HBaseBatchScan {
     ) extends HBaseBatchScan(connection, table, ranges, threads, buffer) {
 
     override protected def scan(range: Scan, out: BlockingQueue[Result]): Unit = {
-      if (timeout.absolute < System.currentTimeMillis()) {
+      if (System.currentTimeMillis() < timeout.absolute) {
         val iter = new ManagedScanIterator(range)
         try {
           while (iter.hasNext) {

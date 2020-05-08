@@ -67,7 +67,7 @@ object CassandraBatchScan {
     ) extends CassandraBatchScan(session, ranges, threads, buffer) {
 
     override protected def scan(range: Statement, out: BlockingQueue[Row]): Unit = {
-      if (timeout.absolute > System.currentTimeMillis()) {
+      if (System.currentTimeMillis() < timeout.absolute) {
         val iter = new ManagedScanIterator(range)
         try {
           // since closing the managed scan doesn't stop the query, check the terminated flag explicitly

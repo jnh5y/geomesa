@@ -94,7 +94,7 @@ object CoprocessorBatchScan {
     ) extends CoprocessorBatchScan(connection, table, ranges, options, threads, rpcThreads, buffer) {
 
     override protected def scan(range: Scan, out: BlockingQueue[Array[Byte]]): Unit = {
-      if (timeout.absolute < System.currentTimeMillis()) {
+      if (System.currentTimeMillis() < timeout.absolute) {
         val iter = new ManagedCoprocessorIterator(range)
         try {
           iter.foreach { r =>

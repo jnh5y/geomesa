@@ -80,7 +80,7 @@ object ThreadManagement extends LazyLogging {
       extends ManagedScan[T] with LazyLogging {
 
     private val (terminated, iter, cancel) = {
-      if (System.currentTimeMillis() > timeout.absolute) {
+      if (System.currentTimeMillis() < timeout.absolute) {
         (new AtomicBoolean(false), underlying.iterator, Some(ThreadManagement.register(this)))
       } else {
         (new AtomicBoolean(true), Iterator.empty, None)
@@ -139,10 +139,11 @@ object ThreadManagement extends LazyLogging {
   }
 
   /**
+   * Runnable to handle terminating a scan
    *
-   * @param scan
+   * @param scan scan to terminate
    */
-  private class QueryKiller(scan: ManagedScan[_]) extends Runnable {
+  private class QueryKiller(val scan: ManagedScan[_]) extends Runnable {
     override def run(): Unit = scan.terminate()
   }
 }
