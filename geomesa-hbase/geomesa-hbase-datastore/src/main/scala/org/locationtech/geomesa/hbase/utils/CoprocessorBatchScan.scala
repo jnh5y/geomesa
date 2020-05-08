@@ -108,14 +108,14 @@ object CoprocessorBatchScan {
       }
     }
 
-    class ManagedCoprocessorIterator(range: Scan)
+    private class ManagedCoprocessorIterator(range: Scan)
         extends AbstractManagedScan(timeout, new CoprocessorScanner(connection, table, range, options, pool)) {
       override protected def typeName: String = plan.filter.index.sft.getTypeName
       override protected def filter: Option[Filter] = plan.filter.filter
     }
   }
 
-  class CoprocessorScanner(
+  private class CoprocessorScanner(
       connection: Connection,
       table: TableName,
       scan: Scan,

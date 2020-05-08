@@ -70,15 +70,22 @@ object ThreadManagement extends LazyLogging {
   }
 
   /**
-   * Mixin trait for scans to be managed for timeouts
+   * Abstract base class for managed scans
+   *
+   * @param timeout timeout
+   * @param underlying low-level scan to be stopped
+   * @tparam T type
    */
   abstract class AbstractManagedScan[T](val timeout: Timeout, underlying: LowLevelScanner[T])
       extends ManagedScan[T] with LazyLogging {
 
-    private val compare = java.lang.Long.compare(System.currentTimeMillis(), timeout.absolute)
-    private val terminated = new AtomicBoolean(compare >= 0)
-    private val iter = if (compare < 0) { underlying.iterator } else { Iterator.empty }
-    private val cancel = if (compare < 0) { ThreadManagement.register(this) } else { null }
+    private val (terminated, iter, cancel) = {
+      if (System.currentTimeMillis() > timeout.absolute) {
+        (new AtomicBoolean(false), underlying.iterator, Some(ThreadManagement.register(this)))
+      } else {
+        (new AtomicBoolean(true), Iterator.empty, None)
+      }
+    }
 
     // used for log messages
     protected def typeName: String
@@ -102,9 +109,7 @@ object ThreadManagement extends LazyLogging {
     override def isTerminated: Boolean = terminated.get
 
     override def close(): Unit = {
-      if (cancel != null) {
-        cancel.cancel(false)
-      }
+      cancel.foreach(_.cancel(false))
       underlying.close()
       if (terminated.get) {
         throw new RuntimeException(s"Scan terminated due to timeout of ${timeout.relative}ms")
@@ -112,16 +117,31 @@ object ThreadManagement extends LazyLogging {
     }
   }
 
+  /**
+   * Low level scanner that can be closed to terminate a scan
+   *
+   * @tparam T type
+   */
   trait LowLevelScanner[T] extends Closeable {
     def iterator: Iterator[T]
   }
 
+  /**
+   * Timeout holder
+   *
+   * @param relative relative timeout, in millis
+   * @param absolute absolute timeout, in system millis since epoch
+   */
   case class Timeout(relative: Long, absolute: Long)
 
   object Timeout {
     def apply(relative: Long): Timeout = Timeout(relative, System.currentTimeMillis() + relative)
   }
 
+  /**
+   *
+   * @param scan
+   */
   private class QueryKiller(scan: ManagedScan[_]) extends Runnable {
     override def run(): Unit = scan.terminate()
   }

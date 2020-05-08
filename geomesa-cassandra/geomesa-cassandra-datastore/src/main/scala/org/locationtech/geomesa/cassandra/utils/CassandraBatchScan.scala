@@ -80,14 +80,14 @@ object CassandraBatchScan {
       }
     }
 
-    class ManagedScanIterator(range: Statement)
+    private class ManagedScanIterator(range: Statement)
         extends AbstractManagedScan(timeout, new CassandraScanner(session, range)) {
       override protected def typeName: String = plan.filter.index.sft.getTypeName
       override protected def filter: Option[Filter] = plan.filter.filter
     }
   }
 
-  class CassandraScanner(session: Session, range: Statement) extends LowLevelScanner[Row] {
+  private class CassandraScanner(session: Session, range: Statement) extends LowLevelScanner[Row] {
     override def iterator: Iterator[Row] = session.execute(range).iterator().asScala
     override def close(): Unit = {} // no way to close a scan...
   }

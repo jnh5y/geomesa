@@ -97,14 +97,14 @@ object HBaseBatchScan {
       }
     }
 
-    class ManagedScanIterator(range: Scan)
+    private class ManagedScanIterator(range: Scan)
         extends AbstractManagedScan(timeout, new HBaseScanner(htable.getScanner(range))) {
       override protected def typeName: String = plan.filter.index.sft.getTypeName
       override protected def filter: Option[Filter] = plan.filter.filter
     }
   }
 
-  class HBaseScanner(scanner: ResultScanner) extends LowLevelScanner[Result] {
+  private class HBaseScanner(scanner: ResultScanner) extends LowLevelScanner[Result] {
     override def iterator: Iterator[Result] = scanner.iterator.asScala
     override def close(): Unit = scanner.close()
   }

@@ -41,8 +41,8 @@ class BatchMultiScanner(
     auths: Authorizations,
     timeout: Option[Timeout],
     numThreads: Int = 12,
-    batchSize: Int = 32768)
-  extends CloseableIterator[java.util.Map.Entry[Key, Value]] with LazyLogging {
+    batchSize: Int = 32768
+  ) extends CloseableIterator[java.util.Map.Entry[Key, Value]] with LazyLogging {
 
   require(batchSize > 0, f"Illegal batchSize ($batchSize%d). Value must be > 0")
   require(numThreads > 0, f"Illegal numThreads ($numThreads%d). Value must be > 0")

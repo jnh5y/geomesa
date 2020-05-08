@@ -154,7 +154,7 @@ object AccumuloQueryPlan extends LazyLogging {
       configure(scanner)
       timeout match {
         case None => new ScanIterator(scanner)
-        case Some(t) => new ManagedScanIterator(scanner, this, t)
+        case Some(t) => new ManagedScanIterator(scanner, t, this)
       }
     }
   }
@@ -222,13 +222,13 @@ object AccumuloQueryPlan extends LazyLogging {
     override def close(): Unit = scanner.close()
   }
 
-  private class ManagedScanIterator(scanner: ScannerBase, plan: AccumuloQueryPlan, timeout: Timeout)
-      extends AbstractManagedScan[Entry[Key, Value]](timeout, AccumuloScanner(scanner)) {
+  private class ManagedScanIterator(scanner: ScannerBase, timeout: Timeout, plan: AccumuloQueryPlan)
+      extends AbstractManagedScan[Entry[Key, Value]](timeout, new AccumuloScanner(scanner)) {
     override protected def typeName: String = plan.filter.index.sft.getTypeName
     override protected def filter: Option[Filter] = plan.filter.filter
   }
 
-  case class AccumuloScanner(scanner: ScannerBase) extends LowLevelScanner[Entry[Key, Value]] {
+  private class AccumuloScanner(scanner: ScannerBase) extends LowLevelScanner[Entry[Key, Value]] {
     override def iterator: Iterator[Entry[Key, Value]] = scanner.iterator.asScala
     override def close(): Unit = scanner.close()
   }
