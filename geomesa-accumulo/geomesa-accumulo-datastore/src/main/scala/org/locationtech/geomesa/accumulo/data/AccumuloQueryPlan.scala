@@ -9,7 +9,6 @@
 package org.locationtech.geomesa.accumulo.data
 
 import java.util.Map.Entry
-import java.util.concurrent.atomic.AtomicBoolean
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.accumulo.core.client.{Connector, IteratorSetting, ScannerBase}
@@ -20,10 +19,11 @@ import org.locationtech.geomesa.accumulo.util.BatchMultiScanner
 import org.locationtech.geomesa.index.PartitionParallelScan
 import org.locationtech.geomesa.index.api.QueryPlan.{FeatureReducer, ResultsToFeatures}
 import org.locationtech.geomesa.index.api.{FilterStrategy, QueryPlan}
+import org.locationtech.geomesa.index.utils.Explainer
 import org.locationtech.geomesa.index.utils.Reprojection.QueryReferenceSystems
-import org.locationtech.geomesa.index.utils.ThreadManagement.{ManagedScan, Timeout}
-import org.locationtech.geomesa.index.utils.{Explainer, ThreadManagement}
+import org.locationtech.geomesa.index.utils.ThreadManagement.{AbstractManagedScan, LowLevelScanner, Timeout}
 import org.locationtech.geomesa.utils.collection.{CloseableIterator, SelfClosingIterator}
+import org.opengis.filter.Filter
 
 /**
   * Accumulo-specific query plan
@@ -153,8 +153,8 @@ object AccumuloQueryPlan extends LazyLogging {
       scanner.setRanges(ranges.asJava)
       configure(scanner)
       timeout match {
-        case None => ScanIterator(scanner)
-        case Some(t) => ManagedScanIterator(scanner, this, t)
+        case None => new ScanIterator(scanner)
+        case Some(t) => new ManagedScanIterator(scanner, this, t)
       }
     }
   }
@@ -215,40 +215,21 @@ object AccumuloQueryPlan extends LazyLogging {
     }
   }
 
-  private case class ScanIterator(scanner: ScannerBase) extends CloseableIterator[Entry[Key, Value]] {
+  private class ScanIterator(scanner: ScannerBase) extends CloseableIterator[Entry[Key, Value]] {
     private val iter = scanner.iterator.asScala
     override def hasNext: Boolean = iter.hasNext
     override def next(): Entry[Key, Value] = iter.next()
     override def close(): Unit = scanner.close()
   }
 
-  private case class ManagedScanIterator(scanner: ScannerBase, plan: AccumuloQueryPlan, timeout: Timeout)
-      extends CloseableIterator[Entry[Key, Value]] with ManagedScan[AccumuloDataStore] {
+  private class ManagedScanIterator(scanner: ScannerBase, plan: AccumuloQueryPlan, timeout: Timeout)
+      extends AbstractManagedScan[Entry[Key, Value]](timeout, AccumuloScanner(scanner)) {
+    override protected def typeName: String = plan.filter.index.sft.getTypeName
+    override protected def filter: Option[Filter] = plan.filter.filter
+  }
 
-    private val compare = java.lang.Long.compare(System.currentTimeMillis(), timeout.absolute)
-    private val iter = if (compare < 0) { scanner.iterator.asScala } else { Iterator.empty }
-    private val cancel = if (compare < 0) { ThreadManagement.register(this) } else { null }
-    private val terminated = new AtomicBoolean(compare >= 0)
-
-    override def hasNext: Boolean = iter.hasNext
-    override def next(): Entry[Key, Value] = iter.next()
-
-    override def close(): Unit = {
-      try {
-        if (cancel != null) {
-          cancel.cancel(false)
-        }
-      } finally {
-        scanner.close()
-      }
-      if (terminated.get) {
-        throw new RuntimeException(s"Scan terminated due to timeout of ${timeout.relative}ms")
-      }
-    }
-
-    override def terminate(): Unit = {
-      terminated.set(true)
-      scanner.close()
-    }
+  case class AccumuloScanner(scanner: ScannerBase) extends LowLevelScanner[Entry[Key, Value]] {
+    override def iterator: Iterator[Entry[Key, Value]] = scanner.iterator.asScala
+    override def close(): Unit = scanner.close()
   }
 }
