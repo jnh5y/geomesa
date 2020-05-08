@@ -320,9 +320,9 @@ object DeltaWriter extends StrictLogging {
       private var mappings: Map[String, java.util.Map[Integer, Integer]] = _
       private var count = 0 // records read in current batch
 
-      override def hasNext: Boolean = synchronized { count < toLoad.reader.getValueCount || loadNextBatch() }
+      override def hasNext: Boolean = count < toLoad.reader.getValueCount || loadNextBatch()
 
-      override def next(): Array[Byte] = synchronized {
+      override def next(): Array[Byte] = {
         var total = 0
         while (total < batchSize && hasNext) {
           // read the rest of the current vector, up to the batch size
@@ -349,7 +349,7 @@ object DeltaWriter extends StrictLogging {
         }
       }
 
-      override def close(): Unit = synchronized { CloseWithLogging.raise(Seq(toLoad, result, mergedDictionaries)) }
+      override def close(): Unit = CloseWithLogging.raise(Seq(toLoad, result, mergedDictionaries))
 
       /**
         * Read the next batch
@@ -518,12 +518,9 @@ object DeltaWriter extends StrictLogging {
 
     val merged: CloseableIterator[Array[Byte]] = new CloseableIterator[Array[Byte]] {
 
-      // note: we synchronize the hasNext and close methods so that query timeouts don't asynchronously
-      // close any arrow vectors while they're being loaded/unloaded, as that can cause memory leaks
-
       private var batch: Array[Byte] = _
 
-      override def hasNext: Boolean = synchronized {
+      override def hasNext: Boolean = {
         if (batch == null) {
           batch = nextBatch()
         }
@@ -536,7 +533,7 @@ object DeltaWriter extends StrictLogging {
         res
       }
 
-      override def close(): Unit = synchronized {
+      override def close(): Unit = {
         CloseWithLogging(result)
         CloseWithLogging(cleanup)
         CloseWithLogging(mergedDictionaries)

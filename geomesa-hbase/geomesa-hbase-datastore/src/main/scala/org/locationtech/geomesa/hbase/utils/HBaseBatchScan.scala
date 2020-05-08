@@ -88,7 +88,9 @@ object HBaseBatchScan {
       if (timeout.absolute < System.currentTimeMillis()) {
         val iter = new ManagedScanIterator(range)
         try {
-          iter.foreach(out.put)
+          while (iter.hasNext) {
+            out.put(iter.next())
+          }
         } finally {
           iter.close()
         }
