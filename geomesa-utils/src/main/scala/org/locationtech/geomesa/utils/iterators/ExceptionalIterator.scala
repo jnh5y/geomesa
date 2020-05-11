@@ -21,30 +21,33 @@ import scala.util.control.NonFatal
  */
 class ExceptionalIterator[T](delegate: Iterator[T]) extends Iterator[T] {
 
-  private var suppressed: Throwable = _
+  private var _suppressed: Throwable = _
 
   override def hasNext: Boolean = {
     try { delegate.hasNext } catch {
       case NonFatal(e) =>
-        suppressed = e
+        _suppressed = e
         true
     }
   }
 
   override def next(): T = {
-    if (suppressed != null) {
-      throw suppressed
+    if (_suppressed != null) {
+      throw _suppressed
     } else {
       delegate.next()
     }
   }
+
+  def suppressed: Option[Throwable] = Option(_suppressed)
 }
 
 object ExceptionalIterator {
 
-  def apply[T](iterator: Iterator[T]): Iterator[T] = new ExceptionalIterator(iterator)
+  def apply[T](iterator: Iterator[T]): ExceptionalIterator[T] = new ExceptionalIterator(iterator)
 
-  def apply[T](iterator: CloseableIterator[T]): CloseableIterator[T] = new ExceptionalCloseableIterator(iterator)
+  def apply[T](iterator: CloseableIterator[T]): ExceptionalCloseableIterator[T] =
+    new ExceptionalCloseableIterator(iterator)
 
   class ExceptionalCloseableIterator[T](delegate: CloseableIterator[T])
       extends ExceptionalIterator(delegate) with CloseableIterator[T] {

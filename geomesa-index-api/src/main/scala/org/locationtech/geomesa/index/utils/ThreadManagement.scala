@@ -87,7 +87,7 @@ object ThreadManagement {
     @volatile
     private var terminated = timeout.absolute <= System.currentTimeMillis()
 
-    private val iter = if (terminated) { Iterator.empty } else { ExceptionalIterator(underlying.iterator) }
+    private val iter = ExceptionalIterator(if (terminated) { Iterator.empty } else { underlying.iterator })
     private val cancel = if (terminated) { None } else { Some(ThreadManagement.register(this)) }
 
     // used for log messages
@@ -98,7 +98,9 @@ object ThreadManagement {
 
     override def next(): T = {
       if (terminated) {
-        throw new RuntimeException(s"Scan terminated due to timeout of ${timeout.relative}ms")
+        val e = new RuntimeException(s"Scan terminated due to timeout of ${timeout.relative}ms")
+        iter.suppressed.foreach(e.addSuppressed)
+        throw e
       } else {
         iter.next()
       }
