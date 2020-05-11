@@ -15,6 +15,7 @@ import com.typesafe.scalalogging.Logger
 import org.locationtech.geomesa.filter.filterToString
 import org.locationtech.geomesa.utils.collection.CloseableIterator
 import org.locationtech.geomesa.utils.concurrent.ExitingExecutor
+import org.locationtech.geomesa.utils.iterators.ExceptionalIterator
 import org.opengis.filter.Filter
 import org.slf4j.LoggerFactory
 
@@ -85,35 +86,19 @@ object ThreadManagement {
     // we can use a volatile var since we only update the value with a single thread
     @volatile
     private var terminated = timeout.absolute <= System.currentTimeMillis()
-    // this shouldn't need to be volatile since next/hasNext must be single-threaded access
-    private var suppressed: Throwable = _
 
-    private val iter = if (terminated) { Iterator.empty } else { underlying.iterator }
+    private val iter = if (terminated) { Iterator.empty } else { ExceptionalIterator(underlying.iterator) }
     private val cancel = if (terminated) { None } else { Some(ThreadManagement.register(this)) }
 
     // used for log messages
     protected def typeName: String
     protected def filter: Option[Filter]
 
-    override def hasNext: Boolean = {
-      if (terminated) { true } else {
-        try { iter.hasNext } catch {
-          case NonFatal(e) =>
-            suppressed = e // work-around for geoserver suppressing our exceptions in hasNext
-            true
-        }
-      }
-    }
+    override def hasNext: Boolean = if (terminated) { true } else { iter.hasNext }
 
     override def next(): T = {
       if (terminated) {
-        val e = new RuntimeException(s"Scan terminated due to timeout of ${timeout.relative}ms")
-        if (suppressed != null) {
-          e.addSuppressed(suppressed)
-        }
-        throw e
-      } else if (suppressed != null) {
-        throw suppressed
+        throw new RuntimeException(s"Scan terminated due to timeout of ${timeout.relative}ms")
       } else {
         iter.next()
       }
