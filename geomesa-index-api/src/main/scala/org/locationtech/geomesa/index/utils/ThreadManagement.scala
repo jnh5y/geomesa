@@ -11,18 +11,21 @@ package org.locationtech.geomesa.index.utils
 import java.io.Closeable
 import java.util.concurrent.{ScheduledFuture, ScheduledThreadPoolExecutor, TimeUnit}
 
-import com.typesafe.scalalogging.LazyLogging
+import com.typesafe.scalalogging.Logger
 import org.locationtech.geomesa.filter.filterToString
 import org.locationtech.geomesa.utils.collection.CloseableIterator
 import org.locationtech.geomesa.utils.concurrent.ExitingExecutor
 import org.opengis.filter.Filter
+import org.slf4j.LoggerFactory
 
 import scala.util.control.NonFatal
 
 /**
  * Singleton for registering and managing running queries.
  */
-object ThreadManagement extends LazyLogging {
+object ThreadManagement {
+
+  private val logger = Logger(LoggerFactory.getLogger(ThreadManagement.getClass.getName.replace("$", "")))
 
   private val executor = {
     val ex = new ScheduledThreadPoolExecutor(2)
@@ -76,11 +79,13 @@ object ThreadManagement extends LazyLogging {
    * @tparam T type
    */
   abstract class AbstractManagedScan[T](val timeout: Timeout, underlying: LowLevelScanner[T])
-      extends ManagedScan[T] with LazyLogging {
+      extends ManagedScan[T] {
 
     // we can use a volatile var since we only update the value with a single thread
     @volatile
     private var terminated = timeout.absolute <= System.currentTimeMillis()
+    // this shouldn't need to be volatile since next/hasNext must be single-threaded access
+    private var suppressed: Throwable = _
 
     private val iter = if (terminated) { Iterator.empty } else { underlying.iterator }
     private val cancel = if (terminated) { None } else { Some(ThreadManagement.register(this)) }
@@ -89,8 +94,23 @@ object ThreadManagement extends LazyLogging {
     protected def typeName: String
     protected def filter: Option[Filter]
 
-    override def hasNext: Boolean = iter.hasNext
-    override def next(): T = iter.next()
+    override def hasNext: Boolean = {
+      try { iter.hasNext } catch {
+        case NonFatal(e) =>
+          suppressed = e // work-around for geoserver suppressing our exceptions in hasNext
+          true
+      }
+    }
+
+    override def next(): T = {
+      if (suppressed != null) {
+        throw suppressed
+      } else if (terminated) {
+        throw new RuntimeException(s"Scan terminated due to timeout of ${timeout.relative}ms")
+      } else {
+        iter.next()
+      }
+    }
 
     override def terminate(): Unit = {
       terminated = true
@@ -109,9 +129,6 @@ object ThreadManagement extends LazyLogging {
     override def close(): Unit = {
       cancel.foreach(_.cancel(false))
       underlying.close()
-      if (terminated) {
-        throw new RuntimeException(s"Scan terminated due to timeout of ${timeout.relative}ms")
-      }
     }
   }
 
