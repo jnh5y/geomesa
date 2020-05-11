@@ -13,7 +13,7 @@ import org.locationtech.geomesa.utils.collection.CloseableIterator
 import scala.util.control.NonFatal
 
 /**
- * Delegates an iterator and throws all exceptions throught the 'next' method to get around geotools
+ * Delegates an iterator and throws all exceptions through the 'next' method to get around geotools
  * wrapping iterators that catch and suppress exceptions in hasNext
  *
  * @param delegate delegate iterator
