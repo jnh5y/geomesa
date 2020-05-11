@@ -80,7 +80,7 @@ object ThreadManagement extends LazyLogging {
 
     // we can use a volatile var since we only update the value with a single thread
     @volatile
-    private var terminated = timeout.absolute >= System.currentTimeMillis()
+    private var terminated = timeout.absolute <= System.currentTimeMillis()
 
     private val iter = if (terminated) { Iterator.empty } else { underlying.iterator }
     private val cancel = if (terminated) { None } else { Some(ThreadManagement.register(this)) }
