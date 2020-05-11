@@ -18,6 +18,7 @@ import org.locationtech.geomesa.utils.concurrent.ExitingExecutor
 import org.opengis.filter.Filter
 import org.slf4j.LoggerFactory
 
+import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
 
 /**
@@ -95,18 +96,24 @@ object ThreadManagement {
     protected def filter: Option[Filter]
 
     override def hasNext: Boolean = {
-      try { iter.hasNext } catch {
-        case NonFatal(e) =>
-          suppressed = e // work-around for geoserver suppressing our exceptions in hasNext
-          true
+      if (terminated) { true } else {
+        try { iter.hasNext } catch {
+          case NonFatal(e) =>
+            suppressed = e // work-around for geoserver suppressing our exceptions in hasNext
+            true
+        }
       }
     }
 
     override def next(): T = {
-      if (suppressed != null) {
+      if (terminated) {
+        val e = new RuntimeException(s"Scan terminated due to timeout of ${timeout.relative}ms")
+        if (suppressed != null) {
+          e.addSuppressed(suppressed)
+        }
+        throw e
+      } else if (suppressed != null) {
         throw suppressed
-      } else if (terminated) {
-        throw new RuntimeException(s"Scan terminated due to timeout of ${timeout.relative}ms")
       } else {
         iter.next()
       }
@@ -151,6 +158,7 @@ object ThreadManagement {
 
   object Timeout {
     def apply(relative: Long): Timeout = Timeout(relative, System.currentTimeMillis() + relative)
+    def apply(relative: String): Timeout = Timeout(Duration(relative).toMillis)
   }
 
   /**
