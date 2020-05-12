@@ -153,9 +153,11 @@ object GeoMesaCoprocessor extends LazyLogging {
             htable.coprocessorService(service, next.getStartRow, next.getStopRow, callback.callable, callback)
           }
         } catch {
-          case e @ (_ :InterruptedException | _ :InterruptedIOException) =>
+          case e: InterruptedException =>
+            // JNH: This is too noisy in the timeout case since each thread is being interrupted....
             logger.warn("Interrupted executing coprocessor query:", e)
-        } finally {
+          case e: InterruptedIOException =>
+            logger.trace("IO Interrupted executing coprocessor query:", e)
           resultQueue.add(terminator)
         }
       }

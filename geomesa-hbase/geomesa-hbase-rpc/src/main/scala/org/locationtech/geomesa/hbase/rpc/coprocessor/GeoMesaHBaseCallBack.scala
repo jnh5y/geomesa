@@ -53,7 +53,8 @@ class GeoMesaHBaseCallBack(
           }
 
           if (controller.failed()) {
-            logger.error(s"Controller failed with error:\n${controller.errorText()}")
+            // JNH: Let's hide this...
+            logger.trace(s"Controller failed with error:\n${controller.errorText()}")
           }
 
           callback.get()
