@@ -61,27 +61,15 @@ object ThreadManagement {
     def timeout: Timeout
 
     /**
-     * Forcibly terminate the scan
-     */
-    def terminate(): Unit
-
-    /**
-     * Was the scan terminated due to timeout
+     * Low-level scan to be stopped
      *
      * @return
      */
-    def isTerminated: Boolean
-  }
+    protected def underlying: LowLevelScanner[T]
 
-  /**
-   * Abstract base class for managed scans
-   *
-   * @param timeout timeout
-   * @param underlying low-level scan to be stopped
-   * @tparam T type
-   */
-  abstract class AbstractManagedScan[T](val timeout: Timeout, underlying: LowLevelScanner[T])
-      extends ManagedScan[T] {
+    // used for log messages
+    protected def typeName: String
+    protected def filter: Option[Filter]
 
     // we can use a volatile var since we only update the value with a single thread
     @volatile
@@ -89,10 +77,6 @@ object ThreadManagement {
 
     private val iter = ExceptionalIterator(if (terminated) { Iterator.empty } else { underlying.iterator })
     private val cancel = if (terminated) { None } else { Some(ThreadManagement.register(this)) }
-
-    // used for log messages
-    protected def typeName: String
-    protected def filter: Option[Filter]
 
     override def hasNext: Boolean = if (terminated) { true } else { iter.hasNext }
 
@@ -106,7 +90,10 @@ object ThreadManagement {
       }
     }
 
-    override def terminate(): Unit = {
+    /**
+     * Forcibly terminate the scan
+     */
+    def terminate(): Unit = {
       terminated = true
       try {
         logger.warn(
@@ -118,7 +105,12 @@ object ThreadManagement {
       }
     }
 
-    override def isTerminated: Boolean = terminated
+    /**
+     * Was the scan terminated due to timeout
+     *
+     * @return
+     */
+    def isTerminated: Boolean = terminated
 
     override def close(): Unit = {
       cancel.foreach(_.cancel(false))

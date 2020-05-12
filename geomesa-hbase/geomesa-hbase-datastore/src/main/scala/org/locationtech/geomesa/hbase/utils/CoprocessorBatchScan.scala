@@ -10,17 +10,15 @@ package org.locationtech.geomesa.hbase.utils
 
 import java.util.concurrent._
 
-import com.google.protobuf.ByteString
 import org.apache.hadoop.hbase.TableName
 import org.apache.hadoop.hbase.client._
 import org.locationtech.geomesa.hbase.HBaseSystemProperties
 import org.locationtech.geomesa.hbase.data.HBaseQueryPlan
 import org.locationtech.geomesa.hbase.rpc.coprocessor.GeoMesaCoprocessor
 import org.locationtech.geomesa.index.utils.AbstractBatchScan
-import org.locationtech.geomesa.index.utils.ThreadManagement.{AbstractManagedScan, LowLevelScanner, Timeout}
+import org.locationtech.geomesa.index.utils.ThreadManagement.{LowLevelScanner, ManagedScan, Timeout}
 import org.locationtech.geomesa.utils.collection.CloseableIterator
 import org.locationtech.geomesa.utils.concurrent.CachedThreadPool
-import org.locationtech.geomesa.utils.io.WithClose
 import org.opengis.filter.Filter
 
 private class CoprocessorBatchScan(
@@ -36,12 +34,15 @@ private class CoprocessorBatchScan(
   protected val pool = new CachedThreadPool(rpcThreads)
 
   override protected def scan(range: Scan, out: BlockingQueue[Array[Byte]]): Unit = {
-    WithClose(GeoMesaCoprocessor.execute(connection, table, range, options, pool)) { results =>
+    val results = GeoMesaCoprocessor.execute(connection, table, range, options, pool)
+    try {
       results.foreach { r =>
         if (r.size() > 0) {
           out.put(r.toByteArray)
         }
       }
+    } finally {
+      results.close()
     }
   }
 
@@ -75,54 +76,24 @@ object CoprocessorBatchScan {
       options: Map[String, String],
       rpcThreads: Int,
       timeout: Option[Timeout]): CloseableIterator[Array[Byte]] = {
+    val scanner = new CoprocessorBatchScan(connection, table, ranges, options, ranges.length, rpcThreads, BufferSize)
     timeout match {
-      case None => new CoprocessorBatchScan(connection, table, ranges, options, ranges.length, rpcThreads, BufferSize).start()
-      case Some(t) => new ManagedCoprocessorBatchScan(plan, connection, table, ranges, options, ranges.length, rpcThreads, BufferSize, t).start()
+      case None => scanner.start()
+      case Some(t) => new ManagedCoprocessorIterator(t, new CoprocessorScanner(scanner), plan)
     }
   }
 
-  private class ManagedCoprocessorBatchScan(
-      plan: HBaseQueryPlan,
-      connection: Connection,
-      table: TableName,
-      ranges: Seq[Scan],
-      options: Map[String, String],
-      threads: Int,
-      rpcThreads: Int,
-      buffer: Int,
-      timeout: Timeout
-    ) extends CoprocessorBatchScan(connection, table, ranges, options, threads, rpcThreads, buffer) {
-
-    override protected def scan(range: Scan, out: BlockingQueue[Array[Byte]]): Unit = {
-      if (System.currentTimeMillis() < timeout.absolute) {
-        val iter = new ManagedCoprocessorIterator(range)
-        try {
-          iter.foreach { r =>
-            if (r.size() > 0) {
-              out.put(r.toByteArray)
-            }
-          }
-        } finally {
-          iter.close()
-        }
-      }
-    }
-
-    private class ManagedCoprocessorIterator(range: Scan)
-        extends AbstractManagedScan(timeout, new CoprocessorScanner(connection, table, range, options, pool)) {
-      override protected def typeName: String = plan.filter.index.sft.getTypeName
-      override protected def filter: Option[Filter] = plan.filter.filter
-    }
+  private class ManagedCoprocessorIterator(
+      override val timeout: Timeout,
+      override protected val underlying: CoprocessorScanner,
+      plan: HBaseQueryPlan
+    ) extends ManagedScan[Array[Byte]] {
+    override protected def typeName: String = plan.filter.index.sft.getTypeName
+    override protected def filter: Option[Filter] = plan.filter.filter
   }
 
-  private class CoprocessorScanner(
-      connection: Connection,
-      table: TableName,
-      scan: Scan,
-      options: Map[String, String],
-      executor: ExecutorService) extends LowLevelScanner[ByteString] {
-    override lazy val iterator: CloseableIterator[ByteString] =
-      GeoMesaCoprocessor.execute(connection, table, scan, options, executor)
-    override def close(): Unit = iterator.close()
+  private class CoprocessorScanner(scanner: CoprocessorBatchScan) extends LowLevelScanner[Array[Byte]] {
+    override def iterator: Iterator[Array[Byte]] = scanner.start()
+    override def close(): Unit = scanner.close()
   }
 }

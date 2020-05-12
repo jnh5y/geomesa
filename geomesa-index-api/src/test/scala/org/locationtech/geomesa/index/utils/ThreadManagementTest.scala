@@ -9,7 +9,7 @@
 package org.locationtech.geomesa.index.utils
 
 import org.junit.runner.RunWith
-import org.locationtech.geomesa.index.utils.ThreadManagement.{AbstractManagedScan, LowLevelScanner, Timeout}
+import org.locationtech.geomesa.index.utils.ThreadManagement.{LowLevelScanner, ManagedScan, Timeout}
 import org.opengis.filter.Filter
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
@@ -61,7 +61,8 @@ class ThreadManagementTest extends Specification {
     }
   }
 
-  class TestScan(timeout: Timeout, underlying: TestScanner) extends AbstractManagedScan(timeout, underlying) {
+  class TestScan(override val timeout: Timeout, override protected val underlying: TestScanner)
+      extends ManagedScan[String] {
     override protected def typeName: String = ""
     override protected def filter: Option[Filter] = None
   }

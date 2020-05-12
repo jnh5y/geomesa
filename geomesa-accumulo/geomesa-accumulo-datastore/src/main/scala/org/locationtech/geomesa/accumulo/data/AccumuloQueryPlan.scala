@@ -21,7 +21,7 @@ import org.locationtech.geomesa.index.api.QueryPlan.{FeatureReducer, ResultsToFe
 import org.locationtech.geomesa.index.api.{FilterStrategy, QueryPlan}
 import org.locationtech.geomesa.index.utils.Explainer
 import org.locationtech.geomesa.index.utils.Reprojection.QueryReferenceSystems
-import org.locationtech.geomesa.index.utils.ThreadManagement.{AbstractManagedScan, LowLevelScanner, Timeout}
+import org.locationtech.geomesa.index.utils.ThreadManagement.{LowLevelScanner, ManagedScan, Timeout}
 import org.locationtech.geomesa.utils.collection.{CloseableIterator, SelfClosingIterator}
 import org.opengis.filter.Filter
 
@@ -154,7 +154,7 @@ object AccumuloQueryPlan extends LazyLogging {
       configure(scanner)
       timeout match {
         case None => new ScanIterator(scanner)
-        case Some(t) => new ManagedScanIterator(scanner, t, this)
+        case Some(t) => new ManagedScanIterator(t, new AccumuloScanner(scanner), this)
       }
     }
   }
@@ -222,8 +222,11 @@ object AccumuloQueryPlan extends LazyLogging {
     override def close(): Unit = scanner.close()
   }
 
-  private class ManagedScanIterator(scanner: ScannerBase, timeout: Timeout, plan: AccumuloQueryPlan)
-      extends AbstractManagedScan[Entry[Key, Value]](timeout, new AccumuloScanner(scanner)) {
+  private class ManagedScanIterator(
+      override val timeout: Timeout,
+      override protected val underlying: AccumuloScanner,
+      plan: AccumuloQueryPlan
+    ) extends ManagedScan[Entry[Key, Value]] {
     override protected def typeName: String = plan.filter.index.sft.getTypeName
     override protected def filter: Option[Filter] = plan.filter.filter
   }

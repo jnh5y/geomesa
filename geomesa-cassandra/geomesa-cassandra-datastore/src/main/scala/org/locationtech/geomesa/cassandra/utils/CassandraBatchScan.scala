@@ -14,7 +14,7 @@ import java.util.concurrent._
 import com.datastax.driver.core._
 import org.locationtech.geomesa.cassandra.data.CassandraQueryPlan
 import org.locationtech.geomesa.index.utils.AbstractBatchScan
-import org.locationtech.geomesa.index.utils.ThreadManagement.{AbstractManagedScan, LowLevelScanner, Timeout}
+import org.locationtech.geomesa.index.utils.ThreadManagement.{LowLevelScanner, ManagedScan, Timeout}
 import org.locationtech.geomesa.utils.collection.CloseableIterator
 import org.opengis.filter.Filter
 
@@ -30,8 +30,6 @@ private class CassandraBatchScan(session: Session, ranges: Seq[Statement], threa
 }
 
 object CassandraBatchScan {
-
-  import scala.collection.JavaConverters._
 
   private val Sentinel: Row = new AbstractGettableData(ProtocolVersion.NEWEST_SUPPORTED) with Row {
     override def getIndexOf(name: String): Int = -1
@@ -51,44 +49,24 @@ object CassandraBatchScan {
       ranges: Seq[Statement],
       threads: Int,
       timeout: Option[Timeout]): CloseableIterator[Row] = {
+    val scanner = new CassandraBatchScan(session, ranges, threads, 100000)
     timeout match {
-      case None => new CassandraBatchScan(session, ranges, threads, 100000).start()
-      case Some(t) => new ManagedCassandraBatchScan(plan, session, ranges, threads, 100000, t).start()
+      case None => scanner.start()
+      case Some(t) => new ManagedScanIterator(t, new CassandraScanner(scanner), plan)
     }
   }
 
-  private class ManagedCassandraBatchScan(
-      plan: CassandraQueryPlan,
-      session: Session,
-      ranges: Seq[Statement],
-      threads: Int,
-      buffer: Int,
-      timeout: Timeout
-    ) extends CassandraBatchScan(session, ranges, threads, buffer) {
-
-    override protected def scan(range: Statement, out: BlockingQueue[Row]): Unit = {
-      if (System.currentTimeMillis() < timeout.absolute) {
-        val iter = new ManagedScanIterator(range)
-        try {
-          // since closing the managed scan doesn't stop the query, check the terminated flag explicitly
-          while (!iter.isTerminated && iter.hasNext) {
-            out.put(iter.next())
-          }
-        } finally {
-          iter.close()
-        }
-      }
-    }
-
-    private class ManagedScanIterator(range: Statement)
-        extends AbstractManagedScan(timeout, new CassandraScanner(session, range)) {
-      override protected def typeName: String = plan.filter.index.sft.getTypeName
-      override protected def filter: Option[Filter] = plan.filter.filter
-    }
+  private class ManagedScanIterator(
+      override val timeout: Timeout,
+      override protected val underlying: CassandraScanner,
+      plan: CassandraQueryPlan
+    ) extends ManagedScan[Row] {
+    override protected def typeName: String = plan.filter.index.sft.getTypeName
+    override protected def filter: Option[Filter] = plan.filter.filter
   }
 
-  private class CassandraScanner(session: Session, range: Statement) extends LowLevelScanner[Row] {
-    override def iterator: Iterator[Row] = session.execute(range).iterator().asScala
-    override def close(): Unit = {} // no way to close a scan...
+  private class CassandraScanner(scanner: CassandraBatchScan) extends LowLevelScanner[Row] {
+    override def iterator: Iterator[Row] = scanner.start()
+    override def close(): Unit = scanner.close()
   }
 }
